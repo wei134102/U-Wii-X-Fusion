@@ -21,9 +21,12 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="U-Wii-X Fusion" FontSize="16" FontWeight="Bold" Foreground="White" Margin="0,0,10,0"/>
-                    <TextBlock Text="多合一游戏管理工具" FontSize="12" Foreground="#BDC3C7"/>
+                <StackPanel Grid.Column="0" Orientation="Vertical" VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="U-Wii-X Fusion" FontSize="16" FontWeight="Bold" Foreground="White" Margin="0,0,10,0"/>
+                        <TextBlock x:Name="txtHeaderVersion" Text="v0.0.0.0" FontSize="12" Foreground="#BDC3C7" VerticalAlignment="Bottom"/>
+                    </StackPanel>
+                    <TextBlock Text="多合一游戏管理工具 | by：B站:86年复古游戏厅" FontSize="12" Foreground="#BDC3C7"/>
                 </StackPanel>
                 <Button Grid.Column="1" x:Name="btnCheckUpdate" Content="检查更新" Padding="8,4" Background="#3498DB" Foreground="White" BorderThickness="0" Cursor="Hand" Click="BtnCheckUpdate_Click"/>
             </Grid>
@@ -100,14 +103,21 @@
                             <TextBlock Text="游戏列表" FontSize="14" FontWeight="Bold" VerticalAlignment="Center"/>
                             <TextBlock x:Name="txtGameCount" Text="" FontSize="12" Foreground="#666" Margin="15,0,0,0" VerticalAlignment="Center"/>
                         </StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                            <Button x:Name="btnSelectAll" Content="全选" Width="55" Padding="6,3" Margin="0,0,6,0" Click="BtnSelectAll_Click"/>
-                            <Button x:Name="btnInvertSelect" Content="反选" Width="55" Padding="6,3" Margin="0,0,6,0" Click="BtnInvertSelect_Click"/>
-                            <Button x:Name="btnClearSelect" Content="取消全选" Width="70" Padding="6,3" Margin="0,0,6,0" Click="BtnClearSelect_Click"/>
-                            <Button x:Name="btnSaveList" Content="保存列表" Width="70" Padding="6,3" Margin="0,0,6,0" ToolTip="将勾选游戏ID保存为TXT（每行一个ID）" Click="BtnSaveList_Click"/>
-                            <Button x:Name="btnLoadList" Content="加载列表" Width="70" Padding="6,3" Margin="0,0,6,0" ToolTip="从TXT加载游戏ID并勾选列表中匹配项" Click="BtnLoadList_Click"/>
-                            <Button x:Name="btnRemoveSelected" Content="删除选中游戏" Width="90" Padding="6,3" ToolTip="从列表中移除勾选的游戏（需确认）" Click="BtnRemoveSelected_Click"/>
-                        </StackPanel>
+                        <Grid Margin="0,0,0,6">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" Orientation="Horizontal">
+                                <Button x:Name="btnSelectAll" Content="全选" Width="55" Padding="6,3" Margin="0,0,6,0" Click="BtnSelectAll_Click"/>
+                                <Button x:Name="btnInvertSelect" Content="反选" Width="55" Padding="6,3" Margin="0,0,6,0" Click="BtnInvertSelect_Click"/>
+                                <Button x:Name="btnClearSelect" Content="取消全选" Width="70" Padding="6,3" Margin="0,0,6,0" Click="BtnClearSelect_Click"/>
+                                <Button x:Name="btnSaveList" Content="保存列表" Width="70" Padding="6,3" Margin="0,0,6,0" ToolTip="将勾选游戏ID保存为TXT（每行一个ID）" Click="BtnSaveList_Click"/>
+                                <Button x:Name="btnLoadList" Content="加载列表" Width="70" Padding="6,3" Margin="0,0,6,0" ToolTip="从TXT加载游戏ID并勾选列表中匹配项" Click="BtnLoadList_Click"/>
+                                <Button x:Name="btnRemoveSelected" Content="删除选中游戏" Width="90" Padding="6,3" ToolTip="从列表中移除勾选的游戏（需确认）" Click="BtnRemoveSelected_Click"/>
+                            </StackPanel>
+                            <Button Grid.Column="1" x:Name="btnGameQuery" Content="Wii游戏数据库查询" Padding="8,4" Margin="10,0,0,0" Click="BtnGameQuery_Click"/>
+                        </Grid>
                         <DataGrid x:Name="dgGames" AutoGenerateColumns="False" Height="240" Background="White" 
                                   SelectionMode="Extended" SelectionUnit="FullRow" CanUserAddRows="False"
                                   GridLinesVisibility="Horizontal" HeadersVisibility="Column"
@@ -145,10 +155,6 @@
                                 <TextBlock x:Name="txtCopyStatus" Text="" Foreground="#666" Margin="0,6,0,0" TextWrapping="Wrap"/>
                             </StackPanel>
                         </Border>
-                        
-                        <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
-                            <Button x:Name="btnGameQuery" Content="Wii游戏查询" Margin="0,0,10,0" Click="BtnGameQuery_Click"/>
-                        </StackPanel>
                     </StackPanel>
                 </Grid>
             </TabItem>

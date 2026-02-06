@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -38,6 +39,7 @@ namespace U_Wii_X_Fusion
         public MainWindow()
         {
             InitializeComponent();
+            InitializeHeader();
             _scannedGames = new List<GameInfo>();
             dgGames.ItemsSource = _scannedGames;
             InitializeDatabase();
@@ -51,6 +53,15 @@ namespace U_Wii_X_Fusion
             var statusTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1.2) };
             statusTimer.Tick += (s, _) => UpdateWiiListStatus();
             statusTimer.Start();
+        }
+
+        private void InitializeHeader()
+        {
+            var version = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "1.0.0.0";
+            if (txtHeaderVersion != null)
+                txtHeaderVersion.Text = $"v{version}";
+
+            Title = $"U-Wii-X Fusion v{version}";
         }
 
         private void InitializeDatabase()
