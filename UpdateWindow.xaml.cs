@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using System.Windows;
@@ -82,8 +83,9 @@ namespace U_Wii_X_Fusion
                 
                 string targetDir = AppDomain.CurrentDomain.BaseDirectory;
                 string exePath = System.Reflection.Assembly.GetExecutingAssembly().Location;
-                
-                _updateService.CreateUpdateScript(extractDir, targetDir, exePath);
+                int pid = Process.GetCurrentProcess().Id;
+
+                _updateService.CreateUpdateScript(extractDir, targetDir, exePath, pid);
                 
                 MessageBox.Show("更新文件已下载。程序将在关闭后自动更新并重启。\n请点击【关闭】按钮完成更新。",
                     "更新准备完成", MessageBoxButton.OK, MessageBoxImage.Information);

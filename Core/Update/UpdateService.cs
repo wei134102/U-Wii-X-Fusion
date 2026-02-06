@@ -213,15 +213,27 @@ namespace U_Wii_X_Fusion.Core.Update
         /// <summary>下载更新包到临时目录</summary>
         public async Task<string> DownloadUpdateAsync(string downloadUrl, IProgress<int> progress = null)
         {
-            string tempDir = Path.Combine(Path.GetTempPath(), "U-Wii-X-Fusion-Update");
-            if (Directory.Exists(tempDir))
-                Directory.Delete(tempDir, true);
-            Directory.CreateDirectory(tempDir);
+            // 下载到程序目录下的 CACHE，便于统一管理与清理
+            string cacheDir = GetCacheDir();
+            string updateDir = Path.Combine(cacheDir, "update");
+            if (Directory.Exists(updateDir))
+                Directory.Delete(updateDir, true);
+            Directory.CreateDirectory(updateDir);
 
-            string zipPath = Path.Combine(tempDir, "update.zip");
+            string zipPath = Path.Combine(updateDir, "update.zip");
             using (var client = new WebClient())
             {
                 client.Headers.Add("User-Agent", "U-Wii-X-Fusion-Updater");
+                client.Headers.Add(HttpRequestHeader.Accept, "application/octet-stream");
+
+                // 私有仓库/提高限流：如果填写了 Token，则带上 Authorization
+                var settings = SettingsManager.GetSettings();
+                if (!string.IsNullOrWhiteSpace(settings?.ApiKey))
+                {
+                    var token = settings.ApiKey.Trim();
+                    client.Headers.Add(HttpRequestHeader.Authorization, "Bearer " + token);
+                }
+
                 if (progress != null)
                 {
                     client.DownloadProgressChanged += (s, e) => progress.Report(e.ProgressPercentage);
@@ -234,6 +246,7 @@ namespace U_Wii_X_Fusion.Core.Update
         /// <summary>解压更新包到临时目录</summary>
         public string ExtractUpdate(string zipPath)
         {
+            // 解压到 CACHE\update\extracted
             string extractDir = Path.Combine(Path.GetDirectoryName(zipPath), "extracted");
             if (Directory.Exists(extractDir))
                 Directory.Delete(extractDir, true);
@@ -279,30 +292,84 @@ namespace U_Wii_X_Fusion.Core.Update
             }
         }
 
-        /// <summary>创建更新脚本（用于重启后应用更新）</summary>
-        public void CreateUpdateScript(string extractedDir, string targetDir, string exePath)
+        /// <summary>创建更新脚本（等待主程序退出后应用更新）</summary>
+        public void CreateUpdateScript(string extractedDir, string targetDir, string exePath, int currentPid)
         {
-            string scriptPath = Path.Combine(Path.GetTempPath(), "U-Wii-X-Fusion-Update.bat");
+            string cacheDir = GetCacheDir();
+            if (!Directory.Exists(cacheDir)) Directory.CreateDirectory(cacheDir);
+            string scriptPath = Path.Combine(cacheDir, "apply_update.bat");
+            string logPath = Path.Combine(cacheDir, "update.log");
+
             // 转义路径中的特殊字符，确保批处理脚本正确执行
             string escapedExtract = extractedDir.Replace("\"", "\"\"");
             string escapedTarget = targetDir.Replace("\"", "\"\"");
             string escapedExe = exePath.Replace("\"", "\"\"");
+            string escapedCache = cacheDir.Replace("\"", "\"\"");
+            string escapedLog = logPath.Replace("\"", "\"\"");
             
             string script = $@"@echo off
 chcp 65001 >nul
-timeout /t 2 /nobreak >nul
-xcopy /E /Y /I ""{escapedExtract}\*"" ""{escapedTarget}\""
-if errorlevel 1 (
-    echo 更新失败，请手动复制文件
-    pause
-    exit /b 1
+setlocal enableextensions
+set ""EXTRACT_DIR={escapedExtract}""
+set ""TARGET_DIR={escapedTarget}""
+set ""EXE_PATH={escapedExe}""
+set ""CACHE_DIR={escapedCache}""
+set ""LOG_PATH={escapedLog}""
+set PID={currentPid}
+
+echo [%%date%% %%time%%] start update script > ""%LOG_PATH%""
+echo EXTRACT_DIR=%EXTRACT_DIR%>> ""%LOG_PATH%""
+echo TARGET_DIR=%TARGET_DIR%>> ""%LOG_PATH%""
+echo PID=%PID%>> ""%LOG_PATH%""
+
+REM 等待主程序退出，避免 exe/dll 被占用导致拷贝失败
+:wait_exit
+tasklist /FI ""PID eq %PID%"" | findstr /R /C:""^ *%PID% "" >nul
+if not errorlevel 1 (
+  timeout /t 1 /nobreak >nul
+  goto wait_exit
 )
-start """" ""{escapedExe}""
-timeout /t 1 /nobreak >nul
+
+echo [%%date%% %%time%%] process exited, copying...>> ""%LOG_PATH%""
+
+REM 用 robocopy 更稳定，并排除用户数据目录
+robocopy ""%EXTRACT_DIR%"" ""%TARGET_DIR%"" /E /R:3 /W:1 /XD ""Data"" ""CONFIG"" /XF ""settings.json"" ""*.log"" >> ""%LOG_PATH%""
+set RC=%%errorlevel%%
+REM robocopy 返回码 0-7 都视为成功；>=8 失败
+if %RC% GEQ 8 (
+  echo [%%date%% %%time%%] copy failed, robocopy errorlevel=%RC%>> ""%LOG_PATH%""
+  exit /b 1
+)
+
+echo [%%date%% %%time%%] copy ok, restarting...>> ""%LOG_PATH%""
+start """" ""%EXE_PATH%""
+
+REM 清理 CACHE（按你的要求：更新完毕后删除 CACHE）
+REM 注意：当前脚本位于 CACHE 中，不能直接 rmdir 自己；改为启动一个临时清理脚本
+set ""CLEANUP=%TEMP%\\U-Wii-X-Fusion-Cleanup.bat""
+echo @echo off> ""%CLEANUP%""
+echo chcp 65001 ^>nul>> ""%CLEANUP%""
+echo timeout /t 2 /nobreak ^>nul>> ""%CLEANUP%""
+echo if exist """"%CACHE_DIR%"""" rmdir /s /q """"%CACHE_DIR%"""" ^>nul 2^>nul>> ""%CLEANUP%""
+echo del """"%%~f0"""" ^>nul 2^>nul>> ""%CLEANUP%""
+start """" /min cmd.exe /c """"%CLEANUP%""""
+
 del ""%~f0""
 ";
             File.WriteAllText(scriptPath, script, Encoding.UTF8);
-            Process.Start(new ProcessStartInfo(scriptPath) { WindowStyle = ProcessWindowStyle.Hidden });
+            // 用 cmd.exe 执行 bat（避免直接启动 bat 时窗口/执行策略异常）
+            var psi = new ProcessStartInfo("cmd.exe", "/c \"" + scriptPath + "\"")
+            {
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                WorkingDirectory = cacheDir
+            };
+            Process.Start(psi);
+        }
+
+        private static string GetCacheDir()
+        {
+            return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CACHE");
         }
     }
 
