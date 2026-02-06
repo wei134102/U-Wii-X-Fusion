@@ -21,6 +21,20 @@ namespace U_Wii_X_Fusion.Core.Settings
         // 网络设置
         public string ApiKey { get; set; } = string.Empty;
         public bool EnableProxy { get; set; } = false;
+
+        // 更新检查（缓存/限流保护）
+        /// <summary>上次进行 GitHub 更新检查的时间（UTC）。用于减少请求次数，避免触发 GitHub API 限流。</summary>
+        public DateTime? LastUpdateCheckUtc { get; set; }
+
+        /// <summary>最近一次成功获取到的 release 信息缓存时间（UTC）。</summary>
+        public DateTime? LatestReleaseCachedAtUtc { get; set; }
+        public string CachedLatestVersion { get; set; } = string.Empty;
+        public string CachedLatestTagName { get; set; } = string.Empty;
+        public string CachedLatestName { get; set; } = string.Empty;
+        public string CachedLatestBody { get; set; } = string.Empty;
+        public string CachedLatestPublishedAt { get; set; } = string.Empty;
+        public string CachedLatestDownloadUrl { get; set; } = string.Empty;
+        public long CachedLatestDownloadSize { get; set; } = 0;
     }
 
     public class SettingsManager

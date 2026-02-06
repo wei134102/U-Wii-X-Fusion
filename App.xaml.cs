@@ -24,6 +24,20 @@ namespace U_Wii_X_Fusion
                     try
                     {
                         await Task.Delay(3000); // 延迟3秒，让主窗口先显示
+
+                        // 限流保护：启动时不要频繁打 GitHub API
+                        try
+                        {
+                            var s = SettingsManager.GetSettings();
+                            if (s.LastUpdateCheckUtc.HasValue)
+                            {
+                                var age = DateTime.UtcNow - s.LastUpdateCheckUtc.Value;
+                                if (age < TimeSpan.FromHours(6))
+                                    return;
+                            }
+                        }
+                        catch { /* ignore */ }
+
                         var updateService = new UpdateService("wei134102", "U-Wii-X-Fusion");
                         string currentVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "1.0.0.0";
                         var latest = await updateService.GetLatestReleaseAsync();
