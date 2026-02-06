@@ -114,9 +114,27 @@ namespace U_Wii_X_Fusion.Database.Local
                 game.Platform = "Unknown";
             }
 
-            // Get title from English locale
-            var enLocale = gameElem.Descendants("locale").FirstOrDefault(l => l.Attribute("lang")?.Value == "EN");
+            // Get title & synopsis，优先 EN，其次简体中文/繁体/日文等
+            var locales = gameElem.Elements("locale").ToList();
+            var enLocale = locales.FirstOrDefault(l => string.Equals(l.Attribute("lang")?.Value, "EN", StringComparison.OrdinalIgnoreCase));
             game.Title = enLocale?.Element("title")?.Value ?? string.Empty;
+            game.Synopsis = enLocale?.Element("synopsis")?.Value ?? string.Empty;
+
+            if (string.IsNullOrWhiteSpace(game.Synopsis))
+            {
+                // 按优先级从其他语言中取有内容的 synopsis（例如 ZHCN / ZHTW / JA）
+                string[] preferredLangs = { "ZHCN", "ZHTW", "JA", "ES", "FR", "DE" };
+                foreach (var lang in preferredLangs)
+                {
+                    var loc = locales.FirstOrDefault(l => string.Equals(l.Attribute("lang")?.Value, lang, StringComparison.OrdinalIgnoreCase));
+                    var syn = loc?.Element("synopsis")?.Value;
+                    if (!string.IsNullOrWhiteSpace(syn))
+                    {
+                        game.Synopsis = syn;
+                        break;
+                    }
+                }
+            }
 
             // Get region
             game.Region = gameElem.Element("region")?.Value ?? string.Empty;
@@ -202,17 +220,19 @@ namespace U_Wii_X_Fusion.Database.Local
 
         public void UpdateGame(GameInfo game)
         {
-            var existingGame = _games.FirstOrDefault(g => g.GameId == game.GameId);
+            if (game == null || string.IsNullOrWhiteSpace(game.GameId)) return;
+            var existingGame = _games.FirstOrDefault(g => string.Equals(g.GameId, game.GameId, StringComparison.OrdinalIgnoreCase));
             if (existingGame != null)
             {
                 _games.Remove(existingGame);
-                _games.Add(game);
             }
+            _games.Add(game);
         }
 
         public void RemoveGame(string gameId)
         {
-            var game = _games.FirstOrDefault(g => g.GameId == gameId);
+            if (string.IsNullOrWhiteSpace(gameId)) return;
+            var game = _games.FirstOrDefault(g => string.Equals(g.GameId, gameId, StringComparison.OrdinalIgnoreCase));
             if (game != null)
             {
                 _games.Remove(game);
@@ -221,7 +241,8 @@ namespace U_Wii_X_Fusion.Database.Local
 
         public GameInfo GetGame(string gameId)
         {
-            return _games.FirstOrDefault(g => g.GameId == gameId);
+            if (string.IsNullOrWhiteSpace(gameId)) return null;
+            return _games.FirstOrDefault(g => string.Equals(g.GameId, gameId, StringComparison.OrdinalIgnoreCase));
         }
 
         public List<GameInfo> GetAllGames()

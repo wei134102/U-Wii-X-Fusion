@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:U_Wii_X_Fusion"
         mc:Ignorable="d"
-        Title="U-Wii-X Fusion" Height="600" Width="900"
+        Title="U-Wii-X Fusion" Height="1020" Width="1500"
         WindowStyle="SingleBorderWindow"
         ResizeMode="CanResizeWithGrip">
     <Grid>
@@ -82,80 +82,179 @@
             <!-- Wii标签页 -->
             <TabItem Header="WII">
                 <Grid Background="#F5F5F5">
-                    <StackPanel Margin="10">
-                        <TextBlock Text="Wii / NGC 游戏管理" FontSize="18" FontWeight="Bold" Margin="0,0,0,15"/>
-                        
-                        <!-- 选择目录与扫描 -->
-                        <Border BorderBrush="#DDDDDD" BorderThickness="1" CornerRadius="5" Padding="10" Margin="0,0,0,15" Background="White">
-                            <StackPanel>
-                                <TextBlock Text="扫描游戏（支持 Wii: .iso / .wbfs / .wad，NGC: .gcm）" FontSize="12" Foreground="#666" Margin="0,0,0,8"/>
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="游戏目录:" Width="70" VerticalAlignment="Center"/>
-                                    <TextBox x:Name="txtScanPath" Width="380" Margin="0,0,8,0" VerticalAlignment="Center" IsReadOnly="True"/>
-                                    <Button x:Name="btnSelectScanPath" Content="选择目录" Width="80" Padding="8,4" Click="BtnSelectScanPath_Click"/>
-                                    <Button x:Name="btnScanGames" Content="扫描" Width="70" Margin="8,0,0,0" Padding="8,4" Click="BtnScanGames_Click"/>
+                    <Grid Margin="10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="3*"/>
+                            <ColumnDefinition Width="2*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- 左侧：列表和操作 -->
+                        <Grid Grid.Column="0">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>  <!-- 标题 -->
+                                <RowDefinition Height="Auto"/>  <!-- 游戏列表 + 统计 -->
+                                <RowDefinition Height="Auto"/>  <!-- 按钮行 -->
+                                <RowDefinition Height="*"/>     <!-- 列表 + 控制器/信息 -->
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0" Text="Wii / NGC 游戏管理" FontSize="18" FontWeight="Bold" Margin="0,0,0,15"/>
+                            
+                            <!-- 游戏列表来源切换：目录 / 磁盘1 / 磁盘2（右侧对齐） -->
+                            <Grid Grid.Row="1" Margin="0,0,0,4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="游戏列表" FontSize="14" FontWeight="Bold" VerticalAlignment="Center"/>
+                                    <TextBlock x:Name="txtGameCount" Text="" FontSize="12" Foreground="#666" Margin="15,0,0,0" VerticalAlignment="Center"/>
+                                    <TextBlock x:Name="txtWiiListStatus" Text="" FontSize="12" Foreground="#666" Margin="15,0,0,0" VerticalAlignment="Center"/>
                                 </StackPanel>
-                            </StackPanel>
-                        </Border>
-                        
-                        <!-- 游戏列表 -->
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                            <TextBlock Text="游戏列表" FontSize="14" FontWeight="Bold" VerticalAlignment="Center"/>
-                            <TextBlock x:Name="txtGameCount" Text="" FontSize="12" Foreground="#666" Margin="15,0,0,0" VerticalAlignment="Center"/>
-                        </StackPanel>
-                        <Grid Margin="0,0,0,6">
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Right">
+                                    <Button x:Name="btnListSourceDirectory" Content="目录" Width="60" Margin="0,0,6,0" Padding="4,2" Click="BtnListSourceDirectory_Click"/>
+                                    <Button x:Name="btnListSourceDisk1" Content="磁盘1" Width="60" Margin="0,0,6,0" Padding="4,2" Click="BtnListSourceDisk1_Click"/>
+                                    <Button x:Name="btnListSourceDisk2" Content="磁盘2" Width="60" Margin="0,0,6,0" Padding="4,2" Click="BtnListSourceDisk2_Click"/>
+                                    <Button x:Name="btnGameQuery" Content="Wii游戏数据库查询" Padding="4,2" Click="BtnGameQuery_Click"/>
+                                </StackPanel>
+                            </Grid>
+                            <Grid Grid.Row="2" Margin="0,0,0,6">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <StackPanel Grid.Column="0" Orientation="Horizontal">
-                                <Button x:Name="btnSelectAll" Content="全选" Width="55" Padding="6,3" Margin="0,0,6,0" Click="BtnSelectAll_Click"/>
-                                <Button x:Name="btnInvertSelect" Content="反选" Width="55" Padding="6,3" Margin="0,0,6,0" Click="BtnInvertSelect_Click"/>
-                                <Button x:Name="btnClearSelect" Content="取消全选" Width="70" Padding="6,3" Margin="0,0,6,0" Click="BtnClearSelect_Click"/>
-                                <Button x:Name="btnSaveList" Content="保存列表" Width="70" Padding="6,3" Margin="0,0,6,0" ToolTip="将勾选游戏ID保存为TXT（每行一个ID）" Click="BtnSaveList_Click"/>
-                                <Button x:Name="btnLoadList" Content="加载列表" Width="70" Padding="6,3" Margin="0,0,6,0" ToolTip="从TXT加载游戏ID并勾选列表中匹配项" Click="BtnLoadList_Click"/>
-                                <Button x:Name="btnRemoveSelected" Content="删除选中游戏" Width="90" Padding="6,3" ToolTip="从列表中移除勾选的游戏（需确认）" Click="BtnRemoveSelected_Click"/>
+                                <!-- 目录模式：显示“添加”按钮；磁盘1/2模式：显示本地磁盘下拉框 -->
+                                <Button x:Name="btnAddSource" Content="添加" Width="60" Padding="6,3" Margin="0,0,6,0" Click="BtnAddSource_Click">
+                                    <Button.ContextMenu>
+                                        <ContextMenu>
+                                            <MenuItem Header="添加文件" Click="MenuAddFile_Click"/>
+                                            <MenuItem Header="添加目录" Click="MenuAddDirectory_Click"/>
+                                        </ContextMenu>
+                                    </Button.ContextMenu>
+                                </Button>
+                                <ComboBox x:Name="cboDiskDrive" Width="160" Margin="0,0,6,0" Visibility="Collapsed"
+                                          DisplayMemberPath="DisplayName" SelectedValuePath="RootPath"
+                                          SelectionChanged="CboDiskDrive_SelectionChanged"/>
+                                <!-- “选择”按钮：悬浮菜单包含 全选/反选/取消选择/磁盘差集/导入导出 -->
+                                <Button x:Name="btnSelectMissingOnDisk" Content="选择" Width="70" Padding="6,3" Margin="0,0,6,0"
+                                        Click="BtnSelectMissingOnDisk_Click">
+                                    <Button.ContextMenu>
+                                        <ContextMenu>
+                                            <MenuItem Header="全选" Click="BtnSelectAll_Click"/>
+                                            <MenuItem Header="反选" Click="BtnInvertSelect_Click"/>
+                                            <MenuItem Header="取消选择" Click="BtnClearSelect_Click"/>
+                                            <Separator/>
+                                            <MenuItem Header="磁盘1中没有的项" Click="MenuSelectMissingOnDisk1_Click"/>
+                                            <MenuItem Header="磁盘2中没有的项" Click="MenuSelectMissingOnDisk2_Click"/>
+                                            <Separator/>
+                                            <MenuItem Header="导出列表" Click="BtnSaveList_Click"/>
+                                            <MenuItem Header="导入列表" Click="BtnLoadList_Click"/>
+                                        </ContextMenu>
+                                    </Button.ContextMenu>
+                                </Button>
+                                <Button x:Name="btnRemoveSelected" Content="删除选中游戏" Width="90" Padding="6,3" Margin="0,0,6,0" ToolTip="从列表中移除勾选的游戏（可选删除磁盘文件）" Click="BtnRemoveSelected_Click"/>
+                                <Button x:Name="btnCopyToDisk" Content="拷贝" Width="70" Padding="6,3" Margin="0,0,6,0" ToolTip="拷贝/转换操作" Click="BtnCopyMenu_Click">
+                                    <Button.ContextMenu>
+                                        <ContextMenu>
+                                            <MenuItem Header="拷贝到磁盘1" Click="MenuCopyToDisk1_Click"/>
+                                            <MenuItem Header="拷贝到磁盘2" Click="MenuCopyToDisk2_Click"/>
+                                            <Separator/>
+                                            <MenuItem Header="转换为 WBFS（仅 Wii）" Click="MenuConvertToWbfs_Click"/>
+                                            <MenuItem Header="转换为 ISO（仅 Wii）" Click="MenuConvertToIso_Click"/>
+                                        </ContextMenu>
+                                    </Button.ContextMenu>
+                                </Button>
                             </StackPanel>
-                            <Button Grid.Column="1" x:Name="btnGameQuery" Content="Wii游戏数据库查询" Padding="8,4" Margin="10,0,0,0" Click="BtnGameQuery_Click"/>
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                                <Button x:Name="btnRenameGames" Content="游戏重命名" Padding="8,4" Margin="0,0,0,0" ToolTip="将选中游戏按“中文名 [ID]\\ID.扩展名”规则重命名并整理到文件夹" Click="BtnRenameGames_Click"/>
+                            </StackPanel>
+                            </Grid>
+
+                            <!-- 列表 + 游戏简介/信息 使用可伸缩的两行布局 -->
+                            <Grid Grid.Row="3">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="2*"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+
+                                <DataGrid Grid.Row="0"
+                                          x:Name="dgGames" AutoGenerateColumns="False" Background="White" 
+                                          SelectionMode="Extended" SelectionUnit="FullRow" CanUserAddRows="False"
+                                          GridLinesVisibility="Horizontal" HeadersVisibility="Column"
+                                          PreviewMouseRightButtonDown="DgGames_PreviewMouseRightButtonDown"
+                                          SelectionChanged="DgGames_SelectionChanged">
+                                    <DataGrid.ContextMenu>
+                                        <ContextMenu>
+                                            <MenuItem Header="搜索游戏视频" Click="MenuSearchGameVideo_Click"/>
+                                            <MenuItem Header="打开游戏位置" Click="MenuOpenGameLocation_Click"/>
+                                        </ContextMenu>
+                                    </DataGrid.ContextMenu>
+                                    <DataGrid.Columns>
+                                        <!-- 注意：DataGrid 里的 CheckBox 编辑默认可能需要提交才写回；显式 TwoWay+PropertyChanged 可提升“勾选后立刻点删除/保存”的可靠性 -->
+                                        <DataGridCheckBoxColumn Header="选" Width="36" Binding="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                        <DataGridTextColumn Header="游戏ID" Width="100" Binding="{Binding GameId}"/>
+                                        <DataGridTextColumn Header="游戏名称" Width="*" MinWidth="120" Binding="{Binding Title}"/>
+                                        <DataGridTextColumn Header="中文名称" Width="*" MinWidth="120" Binding="{Binding ChineseTitle}"/>
+                                        <DataGridTextColumn Header="大小" Width="90" Binding="{Binding FormattedSize}" SortMemberPath="Size"/>
+                                        <DataGridTextColumn Header="平台" Width="60" Binding="{Binding Platform}"/>
+                                        <DataGridTextColumn Header="格式" Width="50" Binding="{Binding Format}"/>
+                                        <DataGridTextColumn Header="路径" Width="200" Binding="{Binding Path}" Visibility="Collapsed"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+
+                                <!-- 游戏详情：游戏简介 + 游戏信息 -->
+                                <Grid Grid.Row="1" Margin="0,8,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="2*"/>
+                                        <ColumnDefinition Width="2*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- 游戏简介 -->
+                                    <Border Grid.Column="0" BorderBrush="#DDDDDD" BorderThickness="1" CornerRadius="5" Padding="6" Background="White" Margin="0,0,6,0">
+                                        <StackPanel>
+                                            <TextBlock Text="游戏简介" FontSize="13" FontWeight="Bold" Margin="0,0,0,4"/>
+                                            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                                                <TextBlock x:Name="txtSynopsis" TextWrapping="Wrap" FontSize="12" Foreground="#333"/>
+                                            </ScrollViewer>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- 游戏信息 -->
+                                    <Border Grid.Column="1" BorderBrush="#DDDDDD" BorderThickness="1" CornerRadius="5" Padding="6" Background="White" Margin="6,0,0,0">
+                                        <StackPanel>
+                                            <TextBlock Text="游戏信息" FontSize="13" FontWeight="Bold" Margin="0,0,0,4"/>
+                                            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                                                <TextBlock x:Name="txtGameInfo" TextWrapping="Wrap" FontSize="12" Foreground="#333"/>
+                                            </ScrollViewer>
+                                        </StackPanel>
+                                    </Border>
+                                </Grid>
+                            </Grid>
+
                         </Grid>
-                        <DataGrid x:Name="dgGames" AutoGenerateColumns="False" Height="240" Background="White" 
-                                  SelectionMode="Extended" SelectionUnit="FullRow" CanUserAddRows="False"
-                                  GridLinesVisibility="Horizontal" HeadersVisibility="Column"
-                                  PreviewMouseRightButtonDown="DgGames_PreviewMouseRightButtonDown">
-                            <DataGrid.ContextMenu>
-                                <ContextMenu>
-                                    <MenuItem Header="搜索游戏视频" Click="MenuSearchGameVideo_Click"/>
-                                    <MenuItem Header="打开游戏位置" Click="MenuOpenGameLocation_Click"/>
-                                </ContextMenu>
-                            </DataGrid.ContextMenu>
-                            <DataGrid.Columns>
-                                <DataGridCheckBoxColumn Header="选" Width="36" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}"/>
-                                <DataGridTextColumn Header="游戏ID" Width="100" Binding="{Binding GameId}"/>
-                                <DataGridTextColumn Header="游戏名称" Width="*" MinWidth="120" Binding="{Binding Title}"/>
-                                <DataGridTextColumn Header="中文名称" Width="*" MinWidth="120" Binding="{Binding ChineseTitle}"/>
-                                <DataGridTextColumn Header="大小" Width="90" Binding="{Binding FormattedSize}" SortMemberPath="Size"/>
-                                <DataGridTextColumn Header="平台" Width="60" Binding="{Binding Platform}"/>
-                                <DataGridTextColumn Header="格式" Width="50" Binding="{Binding Format}"/>
-                                <DataGridTextColumn Header="路径" Width="200" Binding="{Binding Path}" Visibility="Collapsed"/>
-                            </DataGrid.Columns>
-                        </DataGrid>
-                        <TextBlock x:Name="txtWiiListStatus" Text="" FontSize="12" Foreground="#666" Margin="0,8,0,0" TextWrapping="Wrap"/>
-                        
-                        <!-- 拷贝到移动硬盘 -->
-                        <Border BorderBrush="#DDDDDD" BorderThickness="1" CornerRadius="5" Padding="10" Margin="0,15,0,0" Background="White">
-                            <StackPanel>
-                                <TextBlock Text="拷贝到移动硬盘" FontSize="14" FontWeight="Bold" Margin="0,0,0,8"/>
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="目标分区:" Width="70" VerticalAlignment="Center"/>
-                                    <ComboBox x:Name="cboTargetDrive" Width="260" Margin="0,0,8,0" VerticalAlignment="Center"
-                                              DisplayMemberPath="DisplayName" SelectedValuePath="RootPath"/>
-                                    <Button x:Name="btnRefreshDrives" Content="刷新" Width="45" Padding="6,4" ToolTip="重新检测移动硬盘/U盘" Click="BtnRefreshDrives_Click"/>
-                                    <Button x:Name="btnCopyToDevice" Content="拷贝选中到设备" Width="120" Margin="8,0,0,0" Padding="8,4" Click="BtnCopyToDevice_Click"/>
-                                </StackPanel>
-                                <TextBlock x:Name="txtCopyStatus" Text="" Foreground="#666" Margin="0,6,0,0" TextWrapping="Wrap"/>
-                            </StackPanel>
+
+                        <!-- 右侧：封面预览（Disc + 3D） -->
+                        <Border Grid.Column="1" BorderBrush="#DDDDDD" BorderThickness="1" CornerRadius="5" Padding="8" Background="White" Margin="12,0,0,0">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+
+                                <GroupBox Header="Disc 封面" FontSize="12" Margin="0,0,0,4">
+                                    <Border Background="#F5F5F5" Padding="4">
+                                        <Image x:Name="imgDiscCover" Stretch="Uniform" />
+                                    </Border>
+                                </GroupBox>
+
+                                <GroupBox Header="3D 封面" Grid.Row="1" FontSize="12" Margin="0,4,0,0">
+                                    <Border Background="#F5F5F5" Padding="4">
+                                        <Image x:Name="img3DCover" Stretch="Uniform" />
+                                    </Border>
+                                </GroupBox>
+                            </Grid>
                         </Border>
-                    </StackPanel>
+                    </Grid>
                 </Grid>
             </TabItem>
             

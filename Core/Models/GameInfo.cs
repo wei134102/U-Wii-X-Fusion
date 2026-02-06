@@ -47,6 +47,8 @@ namespace U_Wii_X_Fusion.Core.Models
         public DateTime? ReleaseDate { get; set; }
         public string Status { get; set; }
         public string CoverPath { get; set; }
+        /// <summary>来自 Wii 游戏数据库（wiitdb.xml）的简介 / 剧情说明（synopsis）</summary>
+        public string Synopsis { get; set; }
 
         private bool _isSelected;
         /// <summary>列表中是否勾选（用于多选、保存列表、拷贝等）</summary>

@@ -112,6 +112,7 @@
     <Compile Include="Core\GameIdentification\NgcGameIdentifier.cs" />
     <Compile Include="Core\GameIdentification\WiiUGameIdentifier.cs" />
     <Compile Include="Core\GameIdentification\Xbox360GameIdentifier.cs" />
+    <Compile Include="Core\GameIdentification\DiscHeaderReader.cs" />
     <Compile Include="Core\Interfaces\IGameIdentifier.cs" />
     <Compile Include="Core\Models\GameInfo.cs" />
     <!-- Database 目录 -->
