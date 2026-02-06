@@ -1,0 +1,39 @@
+# 忽略 temp 文件夹
+temp/
+
+# 忽略编译生成的文件
+bin/
+obj/
+
+# 忽略用户设置文件
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# 忽略 NuGet 包
+packages/
+
+# 忽略日志文件
+*.log
+
+# 忽略环境变量文件
+.env
+
+# 忽略 IDE 配置文件
+.vs/
+.idea/
+
+# 忽略临时文件
+*.tmp
+*.temp
+
+# 忽略构建输出
+BuildOutput/
+
+# 忽略测试结果
+TestResults/
+
+# 忽略调试文件
+*.pdb
+*.vshost.*

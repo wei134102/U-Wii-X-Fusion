@@ -1,0 +1,442 @@
+	<genres>
+		<maingenre name="theme">
+			<loc lang="FR">thème</loc>
+			<loc lang="FI">teema</loc>
+			<subgenre name="fantasy">
+				<loc lang="FR">fantasy</loc>
+				<loc lang="FI">fantasia</loc>
+			</subgenre>
+			<subgenre name="historic">
+				<loc lang="FR">historique</loc>
+				<loc lang="FI">historiallinen</loc>
+			</subgenre>
+			<subgenre name="horror">
+				<loc lang="FR">horreur</loc>
+				<loc lang="FI">kauhu</loc>
+			</subgenre>
+			<subgenre name="modern day">
+				<loc lang="FR">contemporain</loc>
+				<loc lang="FI">nykyaikainen</loc>
+			</subgenre>
+			<subgenre name="sci-fi">
+				<loc lang="FR">science-fiction</loc>
+				<loc lang="FI">tieteisfiktio</loc>
+			</subgenre>
+		</maingenre>
+		<maingenre name="general">
+			<loc lang="FR">général</loc>
+			<loc lang="FI">yleinen</loc>
+			<subgenre name="arcade">
+				<loc lang="FR">arcade</loc>
+				<loc lang="FI">pelihalli</loc>
+			</subgenre>
+			<subgenre name="party">
+				<loc lang="FR">party</loc>
+				<loc lang="FI">party</loc>
+			</subgenre>
+			<subgenre name="puzzle">
+				<loc lang="FR">réflexion</loc>
+				<loc lang="FI">pulma</loc>
+			</subgenre>
+		</maingenre>
+		<maingenre name="action">
+			<loc lang="FR">action</loc>
+			<loc lang="FI">toiminta</loc>
+			<subgenre name="platformer">
+				<loc lang="FR">plates-formes</loc>
+				<loc lang="FI">tasohyppely</loc>
+			</subgenre>
+			<subgenre name="2D platformer">
+				<loc lang="FR">plates-formes 2D</loc>
+				<loc lang="FI">2D-tasohyppely</loc>
+			</subgenre>
+			<subgenre name="3D platformer">
+				<loc lang="FR">plates-formes 3D</loc>
+				<loc lang="FI">3D-tasohyppely</loc>
+			</subgenre>
+			<subgenre name="shooter">
+				<loc lang="FR">tir</loc>
+				<loc lang="FI">ammunta</loc>
+			</subgenre>
+			<subgenre name="first-person shooter">
+				<loc lang="FR">tir à la première personne</loc>
+				<loc lang="FI">ensimmäisen persoonan ammunta</loc>
+			</subgenre>
+			<subgenre name="third-person shooter">
+				<loc lang="FR">tir à la troisième personne</loc>
+				<loc lang="FI">kolmannen persoonan ammunta</loc>
+			</subgenre>
+			<subgenre name="rail shooter">
+				<loc lang="FR">tir sur rails</loc>
+				<loc lang="FI">kiskoilla kulkeva ammunta</loc>
+			</subgenre>
+			<subgenre name="run and gun">
+				<loc lang="FR">run and gun</loc>
+				<loc lang="FI">juokse ja ammu -tyyppinen ammunta</loc>
+			</subgenre>
+			<subgenre name="shoot 'em up">
+				<loc lang="FR">shoot 'em up</loc>
+				<loc lang="FI">shoot 'em up</loc>
+			</subgenre>
+			<subgenre name="stealth action">
+				<loc lang="FR">infiltration</loc>
+				<loc lang="FI">hiiviskely</loc>
+			</subgenre>
+			<subgenre name="survival horror">
+				<loc lang="FR">survival horror</loc>
+				<loc lang="FI">selviytymiskauhu</loc>
+			</subgenre>
+		</maingenre>
+		<maingenre name="sports">
+			<loc lang="FR">sport</loc>
+			<loc lang="FI">urheilu</loc>
+			<subgenre name="baseball">
+				<loc lang="FR">baseball</loc>
+				<loc lang="FI">pesäpallo</loc>
+			</subgenre>
+			<subgenre name="basketball">
+				<loc lang="FR">basketball</loc>
+				<loc lang="FI">koripallo</loc>
+			</subgenre>
+			<subgenre name="billiards">
+				<loc lang="FR">billard</loc>
+				<loc lang="FI">biljardi</loc>
+			</subgenre>
+			<subgenre name="bowling">
+				<loc lang="FR">bowling</loc>
+				<loc lang="FI">keilailu</loc>
+			</subgenre>
+			<subgenre name="boxing">
+				<loc lang="FR">boxe</loc>
+				<loc lang="FI">nyrkkeily</loc>
+			</subgenre>
+			<subgenre name="cricket">
+				<loc lang="FR">cricket</loc>
+				<loc lang="FI">kriketti</loc>
+			</subgenre>
+			<subgenre name="soccer">
+				<loc lang="FR">football</loc>
+				<loc lang="FI">jalkapallo</loc>
+			</subgenre>
+			<subgenre name="football">
+				<loc lang="FR">football américain</loc>
+				<loc lang="FI">amerikkalainen jalkapallo</loc>
+			</subgenre>
+			<subgenre name="rugby">
+				<loc lang="FR">rugby</loc>
+				<loc lang="FI">rugby</loc>
+			</subgenre>
+			<subgenre name="golf">
+				<loc lang="FR">golf</loc>
+				<loc lang="FI">golf</loc>
+			</subgenre>
+			<subgenre name="hockey">
+				<loc lang="FR">hockey</loc>
+				<loc lang="FI">jääkiekko</loc>
+			</subgenre>
+			<subgenre name="martial arts">
+				<loc lang="FR">arts martiaux</loc>
+				<loc lang="FI">taistelulaji</loc>
+			</subgenre>
+			<subgenre name="pétanque">
+				<loc lang="FR">pétanque</loc>
+				<loc lang="FI">petankki</loc>
+			</subgenre>
+			<subgenre name="skateboarding">
+				<loc lang="FR">skate</loc>
+				<loc lang="FI">rullalautailu</loc>
+			</subgenre>
+			<subgenre name="ski">
+				<loc lang="FR">ski</loc>
+				<loc lang="FI">hiihto</loc>
+			</subgenre>
+			<subgenre name="snowboarding">
+				<loc lang="FR">snowboard</loc>
+				<loc lang="FI">lumilautailu</loc>
+			</subgenre>
+			<subgenre name="surfing">
+				<loc lang="FR">surf</loc>
+				<loc lang="FI">lainelautailu</loc>
+			</subgenre>
+			<subgenre name="table tennis">
+				<loc lang="FR">tennis de table</loc>
+				<loc lang="FI">pöytätennis</loc>
+			</subgenre>
+			<subgenre name="tennis">
+				<loc lang="FR">tennis</loc>
+				<loc lang="FI">tennis</loc>
+			</subgenre>
+			<subgenre name="volleyball">
+				<loc lang="FR">volleyball</loc>
+				<loc lang="FI">lentopallo</loc>
+			</subgenre>
+			<subgenre name="wrestling">
+				<loc lang="FR">catch</loc>
+				<loc lang="FI">paini</loc>
+			</subgenre>
+		</maingenre>
+		<maingenre name="adventure">
+			<loc lang="FR">aventure</loc>
+			<loc lang="FI">seikkailu</loc>
+			<subgenre name="hidden object">
+				<loc lang="FR">objet caché</loc>
+				<loc lang="FI">piilokuva</loc>
+			</subgenre>
+			<subgenre name="interactive fiction">
+				<loc lang="FR">fiction interactive</loc>
+				<loc lang="FI">vuorovaikutteinen fiktio</loc>
+			</subgenre>
+			<subgenre name="interactive movie">
+				<loc lang="FR">film interactif</loc>
+				<loc lang="FI">vuorovaikutteinen elokuva</loc>
+			</subgenre>
+			<subgenre name="point-and-click">
+				<loc lang="FR">point-and-click</loc>
+				<loc lang="FI">osoita ja klikkaa</loc>
+			</subgenre>
+		</maingenre>
+		<maingenre name="music">
+			<loc lang="FR">musique</loc>
+			<loc lang="FI">musiikki</loc>
+			<subgenre name="dance">
+				<loc lang="FR">danse</loc>
+				<loc lang="FI">tanssi</loc>
+			</subgenre>
+			<subgenre name="karaoke">
+				<loc lang="FR">karaoké</loc>
+				<loc lang="FI">karaoke</loc>
+			</subgenre>
+			<subgenre name="rhythm">
+				<loc lang="FR">rythme</loc>
+				<loc lang="FI">rytmi</loc>
+			</subgenre>
+		</maingenre>
+		<maingenre name="racing">
+			<loc lang="FR">course</loc>
+			<loc lang="FI">kilpa-ajo</loc>
+			<subgenre name="bike racing">
+				<loc lang="FR">course de vélos</loc>
+				<loc lang="FI">kilpapyöräily</loc>
+			</subgenre>
+			<subgenre name="futuristic racing">
+				<loc lang="FR">course futuriste</loc>
+				<loc lang="FI">tulevaisuuden kilpa-ajo</loc>
+			</subgenre>
+			<subgenre name="kart racing">
+				<loc lang="FR">karting</loc>
+				<loc lang="FI">karting</loc>
+			</subgenre>
+			<subgenre name="motorcycle racing">
+				<loc lang="FR">course de motos</loc>
+				<loc lang="FI">moottoripyöräily</loc>
+			</subgenre>
+			<subgenre name="off-road racing">
+				<loc lang="FR">rally</loc>
+				<loc lang="FI">maastokilpa-ajo</loc>
+			</subgenre>
+			<subgenre name="sim racing">
+				<loc lang="FR">simulation de conduite</loc>
+				<loc lang="FI">kilpa-ajo simulaatio</loc>
+			</subgenre>
+			<subgenre name="truck racing">
+				<loc lang="FR">course de camions</loc>
+				<loc lang="FI">kuormurikilpa-ajo</loc>
+			</subgenre>
+			<subgenre name="watercraft racing">
+				<loc lang="FR">course aquatique</loc>
+				<loc lang="FI">vesikilpa-ajo</loc>
+			</subgenre>
+		</maingenre>
+		<maingenre name="fighting">
+			<loc lang="FR">combat</loc>
+			<loc lang="FI">taistelu</loc>
+			<subgenre name="2D fighting">
+				<loc lang="FR">combat 2D</loc>
+				<loc lang="FI">2D-taistelu</loc>
+			</subgenre>
+			<subgenre name="3D fighting">
+				<loc lang="FR">combat 3D</loc>
+				<loc lang="FI">3D-taistelu</loc>
+			</subgenre>
+			<subgenre name="beat 'em up">
+				<loc lang="FR">beat 'em up</loc>
+				<loc lang="FI">beat 'em up</loc>
+			</subgenre>
+		</maingenre>
+		<maingenre name="simulation">
+			<loc lang="FR">simulation</loc>
+			<loc lang="FI">simulaatio</loc>
+			<subgenre name="cooking">
+				<loc lang="FR">cuisine</loc>
+				<loc lang="FI">ruoanlaitto</loc>
+			</subgenre>
+			<subgenre name="fishing">
+				<loc lang="FR">pêche</loc>
+				<loc lang="FI">kalastus</loc>
+			</subgenre>
+			<subgenre name="hunting">
+				<loc lang="FR">chasse</loc>
+				<loc lang="FI">metsästys</loc>
+			</subgenre>
+			<subgenre name="business simulation">
+				<loc lang="FR">simulation d'entreprise</loc>
+				<loc lang="FI">liike-elämäsimulaatio</loc>
+			</subgenre>
+			<subgenre name="construction simulation">
+				<loc lang="FR">simulation de construction</loc>
+				<loc lang="FI">työmaasimulaatio</loc>
+			</subgenre>
+			<subgenre name="flight simulation">
+				<loc lang="FR">simulation de vol</loc>
+				<loc lang="FI">lentosimulaatio</loc>
+			</subgenre>
+			<subgenre name="life simulation">
+				<loc lang="FR">simulation de vie</loc>
+				<loc lang="FI">elämäsimulaatio</loc>
+			</subgenre>
+			<subgenre name="management simulation">
+				<loc lang="FR">simulation de gestion</loc>
+				<loc lang="FI">hallintasimulaatio</loc>
+			</subgenre>
+			<subgenre name="train simulation">
+				<loc lang="FR">simulation ferroviaire</loc>
+				<loc lang="FI">junasimulaatio</loc>
+			</subgenre>
+			<subgenre name="virtual pet">
+				<loc lang="FR">animal virtuel</loc>
+				<loc lang="FI">virtuaalilemmikki</loc>
+			</subgenre>
+		</maingenre>
+		<maingenre name="role-playing">
+			<loc lang="FR">jeu de rôle</loc>
+			<loc lang="FI">roolipeli</loc>
+			<subgenre name="action RPG">
+				<loc lang="FR">action RPG</loc>
+				<loc lang="FI">toimintaroolipeli</loc>
+			</subgenre>
+			<subgenre name="strategy RPG">
+				<loc lang="FR">strategy RPG</loc>
+				<loc lang="FI">strateginen roolipeli</loc>
+			</subgenre>
+			<subgenre name="tactical RPG">
+				<loc lang="FR">tactical RPG</loc>
+				<loc lang="FI">taktinen roolipeli</loc>
+			</subgenre>
+			<subgenre name="MMORPG">
+				<loc lang="FR">MMORPG</loc>
+				<loc lang="FI">MMORPG</loc>
+			</subgenre>
+			<subgenre name="roguelike">
+				<loc lang="FR">roguelike</loc>
+				<loc lang="FI">roguelike</loc>
+			</subgenre>
+		</maingenre>
+		<maingenre name="strategy">
+			<loc lang="FR">stratégie</loc>
+			<loc lang="FI">strategia</loc>
+			<subgenre name="4X">
+				<loc lang="FR">4X</loc>
+				<loc lang="FI">valtiosimulaattori</loc>
+			</subgenre>
+			<subgenre name="real-time strategy">
+				<loc lang="FR">stratégie temps réel</loc>
+				<loc lang="FI">reaaliaikastrategia</loc>
+			</subgenre>
+			<subgenre name="turn-based strategy">
+				<loc lang="FR">stratégie tour par tour</loc>
+				<loc lang="FI">vuoropohjastrategia</loc>
+			</subgenre>
+			<subgenre name="tower defense">
+				<loc lang="FR">tower defense</loc>
+				<loc lang="FI">puolustus</loc>
+			</subgenre>
+			<subgenre name="wargame">
+				<loc lang="FR">wargame</loc>
+				<loc lang="FI">sotapeli</loc>
+			</subgenre>
+		</maingenre>
+		<maingenre name="traditional">
+			<loc lang="FR">traditionnel</loc>
+			<loc lang="FI">perinteinen</loc>
+			<subgenre name="board game">
+				<loc lang="FR">jeu de société</loc>
+				<loc lang="FI">lautapeli</loc>
+			</subgenre>
+			<subgenre name="cards">
+				<loc lang="FR">cartes</loc>
+				<loc lang="FI">korttipeli</loc>
+			</subgenre>
+			<subgenre name="chess">
+				<loc lang="FR">échecs</loc>
+				<loc lang="FI">shakki</loc>
+			</subgenre>
+			<subgenre name="darts">
+				<loc lang="FR">fléchettes</loc>
+				<loc lang="FI">darts</loc>
+			</subgenre>
+			<subgenre name="pinball">
+				<loc lang="FR">flipper</loc>
+				<loc lang="FI">flipperi</loc>
+			</subgenre>
+			<subgenre name="poker">
+				<loc lang="FR">poker</loc>
+				<loc lang="FI">pokeri</loc>
+			</subgenre>
+			<subgenre name="trivia">
+				<loc lang="FR">quizz</loc>
+				<loc lang="FI">nippelitieto</loc>
+			</subgenre>
+		</maingenre>
+		<maingenre name="health">
+			<loc lang="FR">santé</loc>
+			<loc lang="FI">terveys</loc>
+			<subgenre name="coaching">
+				<loc lang="FR">coaching</loc>
+				<loc lang="FI">valmennus</loc>
+			</subgenre>
+			<subgenre name="exercise">
+				<loc lang="FR">exercice</loc>
+				<loc lang="FI">harjoittelu</loc>
+			</subgenre>
+			<subgenre name="fitness">
+				<loc lang="FR">gymnastique</loc>
+				<loc lang="FI">kuntoilu</loc>
+			</subgenre>
+		</maingenre>
+		<maingenre name="others">
+			<loc lang="FR">autres</loc>
+			<loc lang="FI">muut</loc>
+			<subgenre name="educational">
+				<loc lang="FR">éducatif</loc>
+				<loc lang="FI">opetus</loc>
+			</subgenre>
+			<subgenre name="drawing">
+				<loc lang="FR">dessin</loc>
+				<loc lang="FI">piirustus</loc>
+			</subgenre>
+			<subgenre name="compilation">
+				<loc lang="FR">compilation</loc>
+				<loc lang="FI">kokoelma</loc>
+			</subgenre>
+			<subgenre name="demo">
+				<loc lang="FR">démo</loc>
+				<loc lang="FI">demo</loc>
+			</subgenre>
+			<subgenre name="sampler">
+				<loc lang="FR">démos</loc>
+				<loc lang="FI">näyte</loc>
+			</subgenre>
+			<subgenre name="multimedia">
+				<loc lang="FR">multimédia</loc>
+				<loc lang="FI">multimedia</loc>
+			</subgenre>
+			<subgenre name="emulator">
+				<loc lang="FR">émulateur</loc>
+				<loc lang="FI">emulaattori</loc>
+			</subgenre>
+			<subgenre name="software">
+				<loc lang="FR">logiciel</loc>
+				<loc lang="FI">sovellus</loc>
+			</subgenre>
+		</maingenre>
+	</genres>

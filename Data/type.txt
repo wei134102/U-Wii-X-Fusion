@@ -1,0 +1,1 @@
+WiiWare, Homebrew, VC-NES, VC-SNES, VC-N64, VC-SMS (Master System), VC-MD (Megadrive/Genesis), VC-PCE, VC-C64, VC-NEOGEO, VC-Arcade
