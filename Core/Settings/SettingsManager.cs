@@ -15,6 +15,8 @@ namespace U_Wii_X_Fusion.Core.Settings
         public string GamePath { get; set; } = string.Empty;
         public string DatabasePath { get; set; } = string.Empty;
         public string CoverPath { get; set; } = string.Empty;
+        /// <summary>上次扫描的游戏目录（Wii/NGC）</summary>
+        public string LastScanPath { get; set; } = string.Empty;
 
         // 网络设置
         public string ApiKey { get; set; } = string.Empty;
@@ -23,7 +25,8 @@ namespace U_Wii_X_Fusion.Core.Settings
 
     public class SettingsManager
     {
-        private static readonly string _settingsFilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "U-Wii-X Fusion", "settings.json");
+        // 保存到程序所在目录下的 CONFIG 文件夹，便于管理
+        private static readonly string _settingsFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CONFIG", "settings.json");
         private static readonly JavaScriptSerializer _serializer = new JavaScriptSerializer { MaxJsonLength = int.MaxValue };
         private static AppSettings _settings;
 

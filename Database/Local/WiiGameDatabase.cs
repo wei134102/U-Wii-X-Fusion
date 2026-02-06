@@ -173,7 +173,7 @@ namespace U_Wii_X_Fusion.Database.Local
             }
             game.Languages = languagesSet.ToList();
 
-            // Get platform type
+            // Get platform type（来自 XML，含 Wii、NGC、WiiWare、VC 等）
             var typeElem = gameElem.Element("type");
             var platformType = typeElem?.Value ?? string.Empty;
             if (string.IsNullOrEmpty(platformType))
@@ -184,6 +184,9 @@ namespace U_Wii_X_Fusion.Database.Local
                     platformType = "NGC";
             }
             game.PlatformType = platformType;
+            // 列表显示用 Platform，用 XML 的 type 覆盖 ID 推断结果，避免 WiiWare/VC 等显示为 Unknown
+            if (!string.IsNullOrEmpty(platformType))
+                game.Platform = platformType;
 
             return game;
         }
@@ -300,6 +303,41 @@ namespace U_Wii_X_Fusion.Database.Local
             }
 
             return filteredGames.ToList();
+        }
+
+        /// <summary>对指定列表应用与 FilterGames 相同的筛选条件，便于与搜索结果组合使用</summary>
+        public List<GameInfo> FilterGameList(IEnumerable<GameInfo> source,
+            string genre = null, string language = null, string controller = null,
+            string region = null, string platformType = null, int? players = null)
+        {
+            if (source == null) return new List<GameInfo>();
+            var filtered = source.AsEnumerable();
+
+            if (!string.IsNullOrEmpty(genre) && genre != "全部游戏类型")
+            {
+                var genreLower = genre.ToLower();
+                filtered = filtered.Where(g => g.Genres.Any(genreItem => genreItem.ToLower() == genreLower));
+            }
+            if (!string.IsNullOrEmpty(language) && language != "全部语言")
+            {
+                if (language == "中文")
+                    filtered = filtered.Where(g => g.Languages.Contains("ZH") || g.Languages.Contains("CN"));
+                else
+                    filtered = filtered.Where(g => g.Languages.Contains(language));
+            }
+            if (!string.IsNullOrEmpty(controller) && controller != "全部控制器")
+            {
+                var controllerLower = controller.ToLower();
+                filtered = filtered.Where(g => g.Controllers.Any(c => c.ToLower() == controllerLower));
+            }
+            if (!string.IsNullOrEmpty(region) && region != "全部区域")
+                filtered = filtered.Where(g => g.Region != null && g.Region.ToUpper().Contains(region.ToUpper()));
+            if (!string.IsNullOrEmpty(platformType) && platformType != "全部平台类型" && platformType != "全部平台")
+                filtered = filtered.Where(g => g.PlatformType == platformType);
+            if (players.HasValue && players > 0)
+                filtered = filtered.Where(g => g.Players >= players.Value);
+
+            return filtered.ToList();
         }
 
         private string GenerateGameId(GameInfo game)

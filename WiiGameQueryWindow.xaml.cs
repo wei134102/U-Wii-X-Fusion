@@ -1,18 +1,12 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 using U_Wii_X_Fusion.Core.Models;
 using U_Wii_X_Fusion.Database.Local;
 
@@ -26,6 +20,7 @@ namespace U_Wii_X_Fusion
         private WiiGameDatabase _wiiDatabase;
         private List<GameInfo> _allGames;
         private string _coverPath;
+        private BitmapImage _currentCoverBitmap;
 
         public WiiGameQueryWindow(string coverPath = "")
         {
@@ -46,9 +41,12 @@ namespace U_Wii_X_Fusion
                 // 加载所有游戏
                 _allGames = _wiiDatabase.GetAllGames();
                 dgGames.ItemsSource = _allGames;
-                
-                // 填充游戏类型下拉框
+                UpdateGameCount();
+
+                // 填充游戏类型、平台、控制器下拉框
                 PopulateGenreComboBox();
+                PopulatePlatformComboBox();
+                PopulateControllerComboBox();
             }
             catch (Exception ex)
             {
@@ -77,24 +75,48 @@ namespace U_Wii_X_Fusion
                 }
             }
 
-            // 添加到下拉框
             foreach (var genre in genres.OrderBy(g => g))
             {
                 cmbGenre.Items.Add(genre);
             }
         }
 
-        private void BtnSearch_Click(object sender, RoutedEventArgs e)
+        private void PopulatePlatformComboBox()
         {
-            try
+            var platforms = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var game in _allGames)
             {
-                var query = txtSearch.Text.Trim();
-                if (!string.IsNullOrEmpty(query))
+                if (!string.IsNullOrWhiteSpace(game.PlatformType))
+                    platforms.Add(game.PlatformType);
+                else if (!string.IsNullOrWhiteSpace(game.Platform))
+                    platforms.Add(game.Platform);
+            }
+            foreach (var p in platforms.OrderBy(x => x))
+            {
+                cmbPlatform.Items.Add(p);
+            }
+        }
+
+        private void PopulateControllerComboBox()
+        {
+            var controllers = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var game in _allGames)
+            {
+                foreach (var c in game.Controllers)
                 {
-                    var results = _wiiDatabase.SearchGames(query);
-                    dgGames.ItemsSource = results;
+                    if (!string.IsNullOrWhiteSpace(c))
+                        controllers.Add(c);
                 }
             }
+            foreach (var c in controllers.OrderBy(x => x))
+            {
+                cmbController.Items.Add(c);
+            }
+        }
+
+        private void BtnSearch_Click(object sender, RoutedEventArgs e)
+        {
+            try { RefreshList(); }
             catch (Exception ex)
             {
                 MessageBox.Show($"搜索时出错: {ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
@@ -104,31 +126,80 @@ namespace U_Wii_X_Fusion
         private void BtnClearSearch_Click(object sender, RoutedEventArgs e)
         {
             txtSearch.Text = string.Empty;
-            dgGames.ItemsSource = _allGames;
+            RefreshList();
+        }
+
+        /// <summary>从 ComboBox 取得用于筛选的显示值（ComboBoxItem 取 Content，否则取 ToString）</summary>
+        private static string GetFilterComboValue(ComboBox cmb)
+        {
+            var item = cmb.SelectedItem;
+            if (item == null) return null;
+            if (item is ComboBoxItem cbi)
+                return cbi.Content?.ToString();
+            return item.ToString();
+        }
+
+        /// <summary>获取当前筛选条件（与界面下拉框一致）</summary>
+        private void GetCurrentFilter(out string genre, out string platformType, out int? players, out string controller, out string region)
+        {
+            genre = GetFilterComboValue(cmbGenre);
+            platformType = GetFilterComboValue(cmbPlatform);
+            string playersText = GetFilterComboValue(cmbPlayers);
+            controller = GetFilterComboValue(cmbController);
+            region = GetFilterComboValue(cmbRegion);
+
+            if (genre == "全部游戏类型") genre = null;
+            if (platformType == "全部平台") platformType = null;
+            players = null;
+            if (!string.IsNullOrEmpty(playersText) && playersText != "全部人数" && playersText.EndsWith("人"))
+            {
+                string num = playersText.TrimEnd('人').Trim();
+                if (int.TryParse(num, out int p) && p > 0)
+                    players = p;
+            }
+            if (controller == "全部控制器") controller = null;
+            if (region == "全部区域") region = null;
+        }
+
+        /// <summary>先按搜索框得到基础列表，再应用当前筛选条件，使搜索与筛选同时生效</summary>
+        private void RefreshList()
+        {
+            var query = txtSearch.Text.Trim();
+            IEnumerable<GameInfo> baseList = string.IsNullOrEmpty(query)
+                ? _allGames
+                : _wiiDatabase.SearchGames(query);
+
+            GetCurrentFilter(out string genre, out string platformType, out int? players, out string controller, out string region);
+
+            var filtered = _wiiDatabase.FilterGameList(baseList,
+                genre: genre,
+                language: null,
+                controller: controller,
+                region: region,
+                platformType: platformType,
+                players: players);
+
+            dgGames.ItemsSource = filtered;
+            UpdateGameCount();
         }
 
         private void BtnApplyFilters_Click(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                var genre = cmbGenre.SelectedItem?.ToString();
-                var language = cmbLanguage.SelectedItem?.ToString();
-                var controller = cmbController.SelectedItem?.ToString();
-                var region = cmbRegion.SelectedItem?.ToString();
-
-                var filteredGames = _wiiDatabase.FilterGames(
-                    genre: genre,
-                    language: language,
-                    controller: controller,
-                    region: region
-                );
-
-                dgGames.ItemsSource = filteredGames;
-            }
+            try { RefreshList(); }
             catch (Exception ex)
             {
                 MessageBox.Show($"应用筛选时出错: {ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+
+        private void UpdateGameCount()
+        {
+            int count = 0;
+            if (dgGames?.ItemsSource is ICollection col)
+                count = col.Count;
+            else if (dgGames?.ItemsSource is IEnumerable en)
+                count = en.Cast<object>().Count();
+            txtGameCount.Text = $"共 {count} 个游戏";
         }
 
         private void DgGames_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -194,19 +265,24 @@ namespace U_Wii_X_Fusion
         {
             if (game == null)
             {
+                _currentCoverBitmap = null;
                 UpdateCoverPreview(null, "请选择游戏查看封面");
                 return;
             }
 
             if (string.IsNullOrEmpty(_coverPath))
             {
+                _currentCoverBitmap = null;
                 UpdateCoverPreview(null, "请先在设置中设置封面存储路径");
                 return;
             }
 
-            string coverType = cmbCoverType.SelectedItem?.ToString() ?? "2D";
+            string coverType = GetCoverTypeString();
             string coverFileName = $"{game.GameId}.png";
-            string coverPath = System.IO.Path.Combine(_coverPath, coverType.ToLower(), coverFileName);
+            string coverPath = System.IO.Path.Combine(_coverPath, coverType, coverFileName);
+            // 部分封面包使用 "Full" 等首字母大写目录名
+            if (!File.Exists(coverPath) && coverType == "full")
+                coverPath = System.IO.Path.Combine(_coverPath, "Full", coverFileName);
 
             if (File.Exists(coverPath))
             {
@@ -220,16 +296,27 @@ namespace U_Wii_X_Fusion
                     bitmap.Freeze(); // 冻结以在UI线程中使用
 
                     UpdateCoverPreview(bitmap, $"已加载 {coverType} 封面");
+                    _currentCoverBitmap = bitmap;
                 }
                 catch (Exception ex)
                 {
+                    _currentCoverBitmap = null;
                     UpdateCoverPreview(null, $"加载封面失败: {ex.Message}");
                 }
             }
             else
             {
+                _currentCoverBitmap = null;
                 UpdateCoverPreview(null, $"未找到 {coverType} 封面");
             }
+        }
+
+        private string GetCoverTypeString()
+        {
+            var item = cmbCoverType.SelectedItem;
+            if (item is ComboBoxItem cbi)
+                return (cbi.Content?.ToString() ?? "2D").ToLowerInvariant();
+            return (item?.ToString() ?? "2D").ToLowerInvariant();
         }
 
         private void UpdateCoverPreview(BitmapImage bitmap, string status)
@@ -238,6 +325,77 @@ namespace U_Wii_X_Fusion
             txtCoverStatus.Text = status;
         }
 
+        private void ImgCover_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (_currentCoverBitmap == null) return;
+            var viewer = new CoverImageViewerWindow(_currentCoverBitmap) { Owner = this };
+            viewer.Show();
+        }
+
         #endregion
+    }
+
+    /// <summary>封面大图查看：居中、原图大小、滚轮缩放时窗口跟随放大缩小、右键关闭</summary>
+    public class CoverImageViewerWindow : Window
+    {
+        private readonly Image _image;
+        private readonly ScaleTransform _scaleTransform;
+        private double _scale = 1.0;
+        private readonly double _baseWidth;
+        private readonly double _baseHeight;
+        private const double PaddingW = 20;
+        private const double PaddingH = 40;
+        private static readonly double MaxW = SystemParameters.PrimaryScreenWidth * 0.95;
+        private static readonly double MaxH = SystemParameters.PrimaryScreenHeight * 0.95;
+
+        public CoverImageViewerWindow(BitmapImage bitmap)
+        {
+            Title = "封面预览";
+            WindowStartupLocation = WindowStartupLocation.CenterScreen;
+            WindowStyle = WindowStyle.ToolWindow;
+            ResizeMode = ResizeMode.CanResize;
+            Background = Brushes.Black;
+
+            _baseWidth = bitmap.PixelWidth;
+            _baseHeight = bitmap.PixelHeight;
+            _scale = 1.0;
+            _scaleTransform = new ScaleTransform(1, 1);
+            _image = new Image
+            {
+                Source = bitmap,
+                Stretch = Stretch.None,
+                RenderTransform = _scaleTransform,
+                RenderTransformOrigin = new System.Windows.Point(0.5, 0.5)
+            };
+
+            // 始终以原始尺寸显示，窗口按原图大小（超出屏幕时出现滚动条）
+            ApplyWindowSize();
+
+            Content = new ScrollViewer
+            {
+                HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                Content = _image
+            };
+
+            _image.MouseWheel += (s, e) =>
+            {
+                e.Handled = true;
+                double delta = e.Delta > 0 ? 1.15 : 1 / 1.15;
+                _scale = Math.Max(0.25, Math.Min(8, _scale * delta));
+                _scaleTransform.ScaleX = _scaleTransform.ScaleY = _scale;
+                ApplyWindowSize();
+            };
+            _image.MouseRightButtonDown += (s, e) => Close();
+            _image.Cursor = System.Windows.Input.Cursors.SizeAll;
+        }
+
+        private void ApplyWindowSize()
+        {
+            double w = Math.Min(_baseWidth * _scale + PaddingW, MaxW);
+            double h = Math.Min(_baseHeight * _scale + PaddingH, MaxH);
+            Width = Math.Max(120, w);
+            Height = Math.Max(100, h);
+        }
     }
 }
