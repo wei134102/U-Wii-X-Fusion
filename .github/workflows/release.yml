@@ -1,0 +1,36 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version'
+        required: true
+        default: '1.0.0'
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v1.1
+      
+    - name: Build Release
+      run: msbuild "U-Wii-X Fusion.sln" /p:Configuration=Release /p:Platform="Any CPU" /t:Rebuild /v:minimal
+      
+    - name: Create Release Archive
+      shell: powershell
+      run: |
+        $version = "${{ github.event.inputs.version }}"
+        Compress-Archive -Path "bin\Release\*" -DestinationPath "U-Wii-X-Fusion-$version.zip" -Force
+        
+    - name: Upload Release Asset
+      uses: actions/upload-artifact@v4
+      with:
+        name: Release-Package
+        path: U-Wii-X-Fusion-*.zip
+        retention-days: 30
