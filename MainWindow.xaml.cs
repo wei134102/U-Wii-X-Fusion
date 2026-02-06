@@ -12,6 +12,7 @@ using Microsoft.Win32;
 using U_Wii_X_Fusion.Core.GameIdentification;
 using U_Wii_X_Fusion.Core.Models;
 using U_Wii_X_Fusion.Core.Settings;
+using U_Wii_X_Fusion.Core.Update;
 using U_Wii_X_Fusion.Database.Local;
 
 namespace U_Wii_X_Fusion
@@ -71,6 +72,15 @@ namespace U_Wii_X_Fusion
             btnBrowseCoverPath.Click += BtnBrowseCoverPath_Click;
             btnBrowseGamePath.Click += BtnBrowseGamePath_Click;
             btnBrowseDatabasePath.Click += BtnBrowseDatabasePath_Click;
+            btnCheckUpdate.Click += BtnCheckUpdate_Click;
+        }
+
+        private void BtnCheckUpdate_Click(object sender, RoutedEventArgs e)
+        {
+            var updateService = new UpdateService("wei134102", "U-Wii-X-Fusion");
+            string currentVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "1.0.0.0";
+            var updateWindow = new UpdateWindow(updateService, currentVersion) { Owner = this };
+            updateWindow.ShowDialog();
         }
 
         /// <summary>加载可用的磁盘分区（移动硬盘、U盘、其他分区）供选择</summary>

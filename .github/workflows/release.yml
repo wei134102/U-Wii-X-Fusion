@@ -1,12 +1,14 @@
 name: Release
 
 on:
+  release:
+    types: [ created, edited ]
   workflow_dispatch:
     inputs:
       version:
-        description: 'Release version'
+        description: 'Release version (e.g., 1.0.1)'
         required: true
-        default: '1.0.0'
+        default: '1.0.1'
 
 jobs:
   build-and-release:
@@ -22,15 +24,73 @@ jobs:
     - name: Build Release
       run: msbuild "U-Wii-X Fusion.sln" /p:Configuration=Release /p:Platform="Any CPU" /t:Rebuild /v:minimal
       
-    - name: Create Release Archive
+    - name: Prepare Release Package
       shell: powershell
       run: |
-        $version = "${{ github.event.inputs.version }}"
-        Compress-Archive -Path "bin\Release\*" -DestinationPath "U-Wii-X-Fusion-$version.zip" -Force
+        # 获取版本号：优先使用 release 标签，否则使用手动输入的版本
+        $version = "${{ github.event.release.tag_name }}"
+        if (-not $version -or $version -eq "") {
+          $version = "${{ github.event.inputs.version }}"
+        }
+        # 移除标签中的 'v' 或 'V' 前缀（如果有）
+        $version = $version -replace '^[vV]', ''
         
-    - name: Upload Release Asset
+        Write-Host "Building release package for version: $version"
+        
+        # 创建临时目录用于打包
+        $packageDir = "release-package"
+        if (Test-Path $packageDir) { Remove-Item -Recurse -Force $packageDir }
+        New-Item -ItemType Directory -Path $packageDir | Out-Null
+        
+        # 复制主程序文件
+        Write-Host "Copying executable files..."
+        Copy-Item "bin\Release\U-Wii-X Fusion.exe" -Destination "$packageDir\" -Force
+        if (Test-Path "bin\Release\U-Wii-X Fusion.exe.config") {
+          Copy-Item "bin\Release\U-Wii-X Fusion.exe.config" -Destination "$packageDir\" -Force
+        }
+        if (Test-Path "bin\Release\U-Wii-X Fusion.pdb") {
+          Copy-Item "bin\Release\U-Wii-X Fusion.pdb" -Destination "$packageDir\" -Force
+        }
+        
+        # 复制 Data 目录（游戏数据库，更新时会保留用户数据）
+        Write-Host "Copying Data directory..."
+        if (Test-Path "bin\Release\Data") {
+          Copy-Item "bin\Release\Data" -Destination "$packageDir\" -Recurse -Force
+        }
+        
+        # 复制本地化资源
+        Write-Host "Copying localization resources..."
+        if (Test-Path "bin\Release\zh-CN") {
+          Copy-Item "bin\Release\zh-CN" -Destination "$packageDir\" -Recurse -Force
+        }
+        
+        # 创建 ZIP 包（ZIP 内文件直接在根目录，不含 release-package 文件夹）
+        $zipName = "U-Wii-X-Fusion-$version.zip"
+        Write-Host "Creating ZIP archive: $zipName"
+        Compress-Archive -Path "$packageDir\*" -DestinationPath $zipName -Force
+        
+        # 验证 ZIP 文件
+        $zipSize = (Get-Item $zipName).Length
+        Write-Host "ZIP file created: $zipName ($([math]::Round($zipSize/1MB, 2)) MB)"
+        
+        # 输出版本号和 ZIP 文件名供后续步骤使用
+        echo "VERSION=$version" >> $env:GITHUB_ENV
+        echo "ZIP_NAME=$zipName" >> $env:GITHUB_ENV
+        
+    - name: Upload to GitHub Release
+      if: github.event_name == 'release'
+      uses: softprops/action-gh-release@v1
+      with:
+        files: U-Wii-X-Fusion-*.zip
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Upload Artifact (for manual trigger)
+      if: github.event_name == 'workflow_dispatch'
       uses: actions/upload-artifact@v4
       with:
-        name: Release-Package
+        name: Release-Package-${{ env.VERSION }}
         path: U-Wii-X-Fusion-*.zip
         retention-days: 30

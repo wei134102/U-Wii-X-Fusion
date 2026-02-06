@@ -71,6 +71,7 @@
     <Reference Include="PresentationFramework" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Web.Extensions" />
+    <Reference Include="System.IO.Compression.FileSystem" />
   </ItemGroup>
   <ItemGroup>
     <ApplicationDefinition Include="App.xaml">
@@ -85,6 +86,10 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="UpdateWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -95,6 +100,10 @@
     </Compile>
     <Compile Include="WiiGameQueryWindow.xaml.cs">
       <DependentUpon>WiiGameQueryWindow.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="UpdateWindow.xaml.cs">
+      <DependentUpon>UpdateWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
     <!-- Core 目录 -->
@@ -132,6 +141,8 @@
     <Compile Include="Metadata\MetadataManager.cs" />
     <!-- Settings 目录 -->
     <Compile Include="Core\Settings\SettingsManager.cs" />
+    <!-- Update 目录 -->
+    <Compile Include="Core\Update\UpdateService.cs" />
   </ItemGroup>
   
   <!-- 数据文件 -->

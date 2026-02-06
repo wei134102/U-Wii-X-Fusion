@@ -16,10 +16,17 @@
         
         <!-- 标题栏 -->
         <Border Grid.Row="0" Background="#2C3E50" Padding="10">
-            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                <TextBlock Text="U-Wii-X Fusion" FontSize="16" FontWeight="Bold" Foreground="White" Margin="0,0,10,0"/>
-                <TextBlock Text="多合一游戏管理工具" FontSize="12" Foreground="#BDC3C7"/>
-            </StackPanel>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="U-Wii-X Fusion" FontSize="16" FontWeight="Bold" Foreground="White" Margin="0,0,10,0"/>
+                    <TextBlock Text="多合一游戏管理工具" FontSize="12" Foreground="#BDC3C7"/>
+                </StackPanel>
+                <Button Grid.Column="1" x:Name="btnCheckUpdate" Content="检查更新" Padding="8,4" Background="#3498DB" Foreground="White" BorderThickness="0" Cursor="Hand" Click="BtnCheckUpdate_Click"/>
+            </Grid>
         </Border>
         
         <!-- 主内容区 -->
