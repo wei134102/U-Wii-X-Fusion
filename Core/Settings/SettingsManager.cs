@@ -19,6 +19,8 @@ namespace U_Wii_X_Fusion.Core.Settings
         public string WiiUCoverPath { get; set; } = string.Empty;
         /// <summary>上次扫描的游戏目录（Wii/NGC）</summary>
         public string LastScanPath { get; set; } = string.Empty;
+        /// <summary>Xbox 360 游戏目录（如 E:\roms\xbox360\X360K）</summary>
+        public string LastXboxScanPath { get; set; } = @"E:\roms\xbox360\X360K";
 
         // 网络设置
         public string ApiKey { get; set; } = string.Empty;

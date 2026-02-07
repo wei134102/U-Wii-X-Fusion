@@ -8,6 +8,7 @@
     <OutputType>WinExe</OutputType>
     <RootNamespace>U_Wii_X_Fusion</RootNamespace>
     <AssemblyName>U-Wii-X Fusion</AssemblyName>
+    <ApplicationIcon>icons\icon.ico</ApplicationIcon>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{60dc8134-eba5-43b8-bcc9-bb4bc16c2548};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
@@ -69,6 +70,7 @@
     <Reference Include="WindowsBase" />
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Web.Extensions" />
     <Reference Include="System.IO.Compression.FileSystem" />
@@ -94,6 +96,14 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="Xbox360GameQueryWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Xbox360AddToDbDialog.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -114,6 +124,14 @@
       <DependentUpon>UpdateWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Xbox360GameQueryWindow.xaml.cs">
+      <DependentUpon>Xbox360GameQueryWindow.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Xbox360AddToDbDialog.xaml.cs">
+      <DependentUpon>Xbox360AddToDbDialog.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
     <!-- Core 目录 -->
     <Compile Include="Core\GameIdentification\GameIdentifier.cs" />
     <Compile Include="Core\GameIdentification\WiiGameIdentifier.cs" />
@@ -129,6 +147,7 @@
     <Compile Include="Database\Local\LocalGameDatabase.cs" />
     <Compile Include="Database\Local\WiiGameDatabase.cs" />
     <Compile Include="Database\Local\WiiUGameDatabase.cs" />
+    <Compile Include="Database\Local\Xbox360TitlesDatabase.cs" />
     <Compile Include="Database\Local\WiiUGamesJsonLookup.cs" />
     <Compile Include="Database\Local\WiiUTitlesJsonLookup.cs" />
     <Compile Include="Database\DatabaseManager.cs" />
@@ -158,8 +177,14 @@
     <Compile Include="Core\Update\UpdateService.cs" />
   </ItemGroup>
   
-  <!-- 数据文件 -->
+  <!-- 图标与数据文件 -->
   <ItemGroup>
+    <Content Include="icons\icon.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="icons\icon.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="Data\wiitdb.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -176,6 +201,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Data\wiiu_titles.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Data\xbox360_titles.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

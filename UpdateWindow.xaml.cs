@@ -17,6 +17,8 @@ namespace U_Wii_X_Fusion
         public UpdateWindow(UpdateService updateService, string currentVersion)
         {
             InitializeComponent();
+            var icon = App.GetWindowIcon();
+            if (icon != null) Icon = icon;
             _updateService = updateService;
             _currentVersion = currentVersion;
             Loaded += UpdateWindow_Loaded;

@@ -1,6 +1,8 @@
 using System;
+using System.IO;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Media.Imaging;
 using U_Wii_X_Fusion.Core.Settings;
 using U_Wii_X_Fusion.Core.Update;
 
@@ -11,6 +13,22 @@ namespace U_Wii_X_Fusion
     /// </summary>
     public partial class App : Application
     {
+        /// <summary>从程序目录 icons 下加载窗口图标（优先 icon.ico，其次 icon.png），供主窗口和子窗口使用。</summary>
+        public static System.Windows.Media.ImageSource GetWindowIcon()
+        {
+            try
+            {
+                string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+                string iconPath = Path.Combine(baseDir, "icons", "icon.ico");
+                if (!File.Exists(iconPath))
+                    iconPath = Path.Combine(baseDir, "icons", "icon.png");
+                if (File.Exists(iconPath))
+                    return BitmapFrame.Create(new Uri(iconPath, UriKind.Absolute));
+            }
+            catch { }
+            return null;
+        }
+
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);

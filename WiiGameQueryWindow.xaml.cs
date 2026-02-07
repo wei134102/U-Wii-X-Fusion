@@ -25,6 +25,8 @@ namespace U_Wii_X_Fusion
         public WiiGameQueryWindow(string coverPath = "")
         {
             InitializeComponent();
+            var icon = App.GetWindowIcon();
+            if (icon != null) Icon = icon;
             _coverPath = coverPath;
             InitializeDatabase();
             SetupEventHandlers();

@@ -55,9 +55,16 @@ namespace U_Wii_X_Fusion
         private readonly List<GameInfo> _wiiuGames = new List<GameInfo>();
         private readonly WiiUGameIdentifier _wiiuIdentifier = new WiiUGameIdentifier();
 
+        private readonly List<GameInfo> _xboxGames = new List<GameInfo>();
+        private Xbox360TitlesDatabase _xboxTitlesDatabase;
+        private readonly Xbox360GameIdentifier _xboxIdentifier = new Xbox360GameIdentifier();
+
+        private System.Windows.Forms.NotifyIcon _notifyIcon;
+
         public MainWindow()
         {
             InitializeComponent();
+            LoadWindowIcon();
             InitializeHeader();
             // 默认显示目录来源的游戏列表
             _scannedGames = _directoryGames;
@@ -66,7 +73,11 @@ namespace U_Wii_X_Fusion
             InitializeWiiUDatabase();
             if (dgGamesWiiU != null)
                 dgGamesWiiU.ItemsSource = _wiiuGames;
+            InitializeXboxDatabase();
+            if (dgGamesXbox != null)
+                dgGamesXbox.ItemsSource = _xboxGames;
             SetupEventHandlers();
+            Closed += MainWindow_Closed;
             LoadSettings();
             LoadCoverPath();
             LoadWiiUCoverPath();
@@ -75,13 +86,67 @@ namespace U_Wii_X_Fusion
             UpdateWiiListStatus();
             UpdateWiiUGameCount();
             UpdateWiiUListStatus();
+            UpdateXboxGameCount();
+            UpdateXboxListStatus();
             var statusTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1.2) };
             statusTimer.Tick += (s, _) =>
             {
                 UpdateWiiListStatus();
                 UpdateWiiUListStatus();
+                UpdateXboxListStatus();
             };
             statusTimer.Start();
+        }
+
+        private void InitializeXboxDatabase()
+        {
+            try
+            {
+                _xboxTitlesDatabase = new Xbox360TitlesDatabase();
+                _xboxTitlesDatabase.Initialize();
+            }
+            catch { }
+        }
+
+        private void LoadWindowIcon()
+        {
+            var icon = App.GetWindowIcon();
+            if (icon != null) Icon = icon;
+        }
+
+        private void MainWindow_Closed(object sender, EventArgs e)
+        {
+            _notifyIcon?.Dispose();
+            _notifyIcon = null;
+        }
+
+        /// <summary>隐藏主窗口到任务栏右下角（系统托盘）</summary>
+        private void ShowMainWindowToTray(string tooltipText)
+        {
+            if (_notifyIcon == null)
+            {
+                _notifyIcon = new System.Windows.Forms.NotifyIcon();
+                string iconPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "icons", "icon.ico");
+                if (File.Exists(iconPath))
+                {
+                    try { _notifyIcon.Icon = new System.Drawing.Icon(iconPath); }
+                    catch { }
+                }
+                _notifyIcon.DoubleClick += (s, _) => { RestoreMainWindowFromTray(); };
+            }
+            _notifyIcon.Text = tooltipText;
+            _notifyIcon.Visible = true;
+            Hide();
+        }
+
+        /// <summary>从托盘恢复并显示主窗口</summary>
+        private void RestoreMainWindowFromTray()
+        {
+            if (_notifyIcon != null)
+                _notifyIcon.Visible = false;
+            Show();
+            WindowState = WindowState.Normal;
+            Activate();
         }
 
         private void InitializeHeader()
@@ -1501,6 +1566,21 @@ namespace U_Wii_X_Fusion
             txtWiiUListStatus.Text = selCount > 0 ? $"  选中: {selCount} 个，共 {FormatSize(selSize)}" : "";
         }
 
+        private void UpdateXboxGameCount()
+        {
+            if (txtXboxGameCount == null) return;
+            int n = _xboxGames?.Count ?? 0;
+            txtXboxGameCount.Text = n > 0 ? $"共 {n} 款游戏" : "";
+        }
+
+        private void UpdateXboxListStatus()
+        {
+            if (txtXboxListStatus == null) return;
+            int selCount = _xboxGames?.Count(g => g.IsSelected) ?? 0;
+            long selSize = _xboxGames?.Where(g => g.IsSelected).Sum(g => g.Size) ?? 0;
+            txtXboxListStatus.Text = selCount > 0 ? $"  选中: {selCount} 个，共 {FormatSize(selSize)}" : "";
+        }
+
         private void UpdateWiiUGameVisuals(GameInfo game)
         {
             if (imgDiscCoverWiiU == null || img3DCoverWiiU == null) return;
@@ -1876,7 +1956,9 @@ namespace U_Wii_X_Fusion
             {
                 Owner = this
             };
+            ShowMainWindowToTray("U-Wii-X Fusion（Wii U 游戏查询中）");
             queryWindow.ShowDialog();
+            RestoreMainWindowFromTray();
         }
 
         private void MenuWiiUSearchGameVideo_Click(object sender, RoutedEventArgs e)
@@ -2129,6 +2211,276 @@ namespace U_Wii_X_Fusion
             }
             catch { }
             return set;
+        }
+
+        #endregion
+
+        #region Xbox 360 游戏管理
+
+        private void BtnXboxAddSource_Click(object sender, RoutedEventArgs e)
+        {
+            if (btnXboxAddSource?.ContextMenu != null)
+            {
+                btnXboxAddSource.ContextMenu.PlacementTarget = btnXboxAddSource;
+                btnXboxAddSource.ContextMenu.IsOpen = true;
+            }
+        }
+
+        private void MenuXboxAddFile_Click(object sender, RoutedEventArgs e)
+        {
+            var ofd = new OpenFileDialog
+            {
+                Title = "选择 Xbox 360 游戏文件",
+                Filter = "Xbox 360 游戏 (*.iso;*.xex;*.god)|*.iso;*.xex;*.god|所有文件 (*.*)|*.*",
+                Multiselect = true
+            };
+            if (ofd.ShowDialog() != true) return;
+            foreach (var path in ofd.FileNames)
+            {
+                if (!File.Exists(path)) continue;
+                var game = _xboxIdentifier.IdentifyGame(path);
+                if (game != null)
+                {
+                    EnrichXboxGameFromDatabase(game);
+                    _xboxGames.Add(game);
+                }
+            }
+            dgGamesXbox?.Items.Refresh();
+            UpdateXboxGameCount();
+            UpdateXboxListStatus();
+        }
+
+        private void MenuXboxAddDirectory_Click(object sender, RoutedEventArgs e)
+        {
+            using (var dlg = new System.Windows.Forms.FolderBrowserDialog())
+            {
+                dlg.Description = "选择包含 Xbox 360 游戏的目录";
+                var lastPath = SettingsManager.GetSettings().LastXboxScanPath;
+                if (!string.IsNullOrEmpty(lastPath) && Directory.Exists(lastPath))
+                    dlg.SelectedPath = lastPath;
+                if (dlg.ShowDialog() != System.Windows.Forms.DialogResult.OK) return;
+                var path = dlg.SelectedPath;
+                SettingsManager.GetSettings().LastXboxScanPath = path;
+                SettingsManager.SaveSettings();
+                ScanAndAddXboxGamesFromDirectory(path);
+            }
+        }
+
+        private void ScanAndAddXboxGamesFromDirectory(string dir)
+        {
+            if (string.IsNullOrEmpty(dir) || !Directory.Exists(dir)) return;
+            try
+            {
+                var addedPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                // 1. 扫描 ISO 文件
+                foreach (var path in Directory.GetFiles(dir, "*.iso", SearchOption.AllDirectories))
+                {
+                    var game = _xboxIdentifier.IdentifyGame(path);
+                    if (game != null && addedPaths.Add(path))
+                    {
+                        EnrichXboxGameFromDatabase(game);
+                        if (_xboxGames.All(g => !string.Equals(g.Path, path, StringComparison.OrdinalIgnoreCase)))
+                            _xboxGames.Add(game);
+                    }
+                }
+                // 2. 递归扫描 GOD/XEX 文件夹（文件夹名为 Title ID，或含 default.xex，或含 Content/$C/$T）
+                ScanXboxGameFolders(dir, dir, addedPaths);
+                dgGamesXbox?.Items.Refresh();
+                UpdateXboxGameCount();
+                UpdateXboxListStatus();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"扫描目录时出错: {ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void ScanXboxGameFolders(string rootDir, string currentDir, HashSet<string> addedPaths)
+        {
+            if (string.IsNullOrEmpty(currentDir) || !Directory.Exists(currentDir)) return;
+            try
+            {
+                if (Xbox360GameIdentifier.IsXbox360GameFolder(currentDir))
+                {
+                    var game = _xboxIdentifier.IdentifyGame(currentDir);
+                    if (game != null && addedPaths.Add(currentDir) &&
+                        _xboxGames.All(g => !string.Equals(g.Path, currentDir, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        EnrichXboxGameFromDatabase(game);
+                        _xboxGames.Add(game);
+                    }
+                    return; // 已是游戏目录，不再深入子目录
+                }
+                foreach (var sub in Directory.GetDirectories(currentDir))
+                {
+                    ScanXboxGameFolders(rootDir, sub, addedPaths);
+                }
+            }
+            catch { }
+        }
+
+        private void EnrichXboxGameFromDatabase(GameInfo game)
+        {
+            if (_xboxTitlesDatabase == null || string.IsNullOrEmpty(game.GameId)) return;
+            var entry = _xboxTitlesDatabase.GetByTitleId(game.GameId);
+            if (entry != null)
+            {
+                if (!string.IsNullOrEmpty(entry.ChineseName)) game.ChineseTitle = entry.ChineseName;
+                if (!string.IsNullOrEmpty(entry.Name)) game.Title = entry.Name;
+            }
+        }
+
+        private void BtnXboxSelect_Click(object sender, RoutedEventArgs e)
+        {
+            if (btnXboxSelect?.ContextMenu != null)
+            {
+                btnXboxSelect.ContextMenu.PlacementTarget = btnXboxSelect;
+                btnXboxSelect.ContextMenu.IsOpen = true;
+            }
+        }
+
+        private void BtnXboxSelectAll_Click(object sender, RoutedEventArgs e)
+        {
+            foreach (var g in _xboxGames) g.IsSelected = true;
+            dgGamesXbox?.Items.Refresh();
+            UpdateXboxListStatus();
+        }
+
+        private void BtnXboxInvertSelect_Click(object sender, RoutedEventArgs e)
+        {
+            foreach (var g in _xboxGames) g.IsSelected = !g.IsSelected;
+            dgGamesXbox?.Items.Refresh();
+            UpdateXboxListStatus();
+        }
+
+        private void BtnXboxClearSelect_Click(object sender, RoutedEventArgs e)
+        {
+            foreach (var g in _xboxGames) g.IsSelected = false;
+            dgGamesXbox?.Items.Refresh();
+            UpdateXboxListStatus();
+        }
+
+        private void BtnXboxRemoveSelected_Click(object sender, RoutedEventArgs e)
+        {
+            var toRemove = _xboxGames.Where(g => g.IsSelected).ToList();
+            if (toRemove.Count == 0)
+            {
+                MessageBox.Show("请先勾选要移除的游戏。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+            foreach (var g in toRemove) _xboxGames.Remove(g);
+            dgGamesXbox?.Items.Refresh();
+            UpdateXboxGameCount();
+            UpdateXboxListStatus();
+        }
+
+        private void BtnXboxList_Click(object sender, RoutedEventArgs e)
+        {
+            if (btnXboxList?.ContextMenu != null)
+            {
+                btnXboxList.ContextMenu.PlacementTarget = btnXboxList;
+                btnXboxList.ContextMenu.IsOpen = true;
+            }
+        }
+
+        private void MenuXboxListClear_Click(object sender, RoutedEventArgs e)
+        {
+            _xboxGames?.Clear();
+            dgGamesXbox?.Items.Refresh();
+            UpdateXboxGameCount();
+            UpdateXboxListStatus();
+        }
+
+        private void MenuXboxListRefresh_Click(object sender, RoutedEventArgs e)
+        {
+            dgGamesXbox?.Items.Refresh();
+            UpdateXboxGameCount();
+            UpdateXboxListStatus();
+        }
+
+        private void BtnXboxCopy_Click(object sender, RoutedEventArgs e)
+        {
+            var selected = _xboxGames.Where(g => g.IsSelected).ToList();
+            if (selected.Count == 0)
+            {
+                MessageBox.Show("请先勾选要拷贝的游戏。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+            using (var dlg = new System.Windows.Forms.FolderBrowserDialog())
+            {
+                dlg.Description = "选择拷贝目标目录";
+                if (dlg.ShowDialog() != System.Windows.Forms.DialogResult.OK) return;
+                string destDir = dlg.SelectedPath;
+                IntPtr hwnd = new WindowInteropHelper(this).Handle;
+                int copied = 0;
+                foreach (var game in selected)
+                {
+                    if (string.IsNullOrEmpty(game.Path) || (!File.Exists(game.Path) && !Directory.Exists(game.Path))) continue;
+                    if (ShellCopyWithProgress(new List<string> { game.Path }, destDir, hwnd)) copied++;
+                }
+                MessageBox.Show($"拷贝完成：成功 {copied} 个。", "拷贝", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+        }
+
+        private void BtnXboxGameQuery_Click(object sender, RoutedEventArgs e)
+        {
+            var queryWindow = new Xbox360GameQueryWindow { Owner = this };
+            ShowMainWindowToTray("U-Wii-X Fusion（Xbox 360 游戏查询中）");
+            queryWindow.ShowDialog();
+            RestoreMainWindowFromTray();
+        }
+
+        private void BtnXboxAddToDb_Click(object sender, RoutedEventArgs e)
+        {
+            AddSelectedXboxGamesToDatabase();
+        }
+
+        private void MenuXboxAddToDb_Click(object sender, RoutedEventArgs e)
+        {
+            AddSelectedXboxGamesToDatabase();
+        }
+
+        private void AddSelectedXboxGamesToDatabase()
+        {
+            var game = dgGamesXbox?.SelectedItem as GameInfo ?? _xboxGames.FirstOrDefault(g => g.IsSelected);
+            if (game == null)
+            {
+                MessageBox.Show("请先选中或勾选一个游戏，再添加到数据库。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+            string titleId = game.GameId ?? Path.GetFileNameWithoutExtension(game.Path ?? "").Trim();
+            string name = game.Title ?? "";
+            string chineseName = game.ChineseTitle ?? "";
+            var dlg = new Xbox360AddToDbDialog(titleId, name, chineseName) { Owner = this };
+            if (dlg.ShowDialog() != true) return;
+            _xboxTitlesDatabase?.AddOrUpdate(dlg.TitleId, dlg.Name, dlg.ChineseName);
+            if (!string.IsNullOrEmpty(dlg.ChineseName)) game.ChineseTitle = dlg.ChineseName;
+            if (!string.IsNullOrEmpty(dlg.Name)) game.Title = dlg.Name;
+            if (!string.IsNullOrEmpty(dlg.TitleId)) game.GameId = dlg.TitleId;
+            dgGamesXbox?.Items.Refresh();
+            MessageBox.Show("已添加到 Xbox 360 游戏数据库。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
+        private void MenuXboxOpenGameLocation_Click(object sender, RoutedEventArgs e)
+        {
+            var game = dgGamesXbox?.SelectedItem as GameInfo ?? _xboxGames.FirstOrDefault(g => g.IsSelected);
+            if (game == null || string.IsNullOrEmpty(game.Path)) { MessageBox.Show("请先选中或勾选一个游戏，且该游戏有路径。", "提示", MessageBoxButton.OK, MessageBoxImage.Information); return; }
+            string folder = File.Exists(game.Path) ? Path.GetDirectoryName(game.Path) : game.Path;
+            if (string.IsNullOrEmpty(folder) || !Directory.Exists(folder)) { MessageBox.Show("游戏所在目录不存在。", "提示", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
+            try { Process.Start(new ProcessStartInfo(folder) { UseShellExecute = true }); }
+            catch (Exception ex) { MessageBox.Show("无法打开文件夹：" + ex.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Warning); }
+        }
+
+        private void DgGamesXbox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            var game = dgGamesXbox?.SelectedItem as GameInfo;
+            if (txtSynopsisXbox != null) txtSynopsisXbox.Text = game?.Synopsis ?? "";
+            if (txtGameInfoXbox != null)
+            {
+                if (game == null) txtGameInfoXbox.Text = "";
+                else txtGameInfoXbox.Text = $"游戏ID: {game.GameId}\n游戏名称: {game.Title}\n中文名称: {game.ChineseTitle}\n格式: {game.Format}\n大小: {game.FormattedSize}";
+            }
+            if (txtXboxStatus != null) txtXboxStatus.Text = game != null ? $"{game.Title ?? game.GameId}" : "选中游戏显示详情";
         }
 
         #endregion
@@ -2509,12 +2861,13 @@ namespace U_Wii_X_Fusion
 
         private void BtnGameQuery_Click(object sender, RoutedEventArgs e)
         {
-            // 打开Wii游戏查询窗口，并传递当前的封面路径
             var queryWindow = new WiiGameQueryWindow(_coverPath)
             {
                 Owner = this
             };
+            ShowMainWindowToTray("U-Wii-X Fusion（Wii 游戏查询中）");
             queryWindow.ShowDialog();
+            RestoreMainWindowFromTray();
         }
 
         #endregion

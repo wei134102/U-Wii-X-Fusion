@@ -75,6 +75,8 @@ namespace U_Wii_X_Fusion.Core.Models
         public int Players { get; set; }
         public List<string> Controllers { get; set; }
         public List<string> Genres { get; set; }
+        /// <summary>分类/类型（如 Shooter、Action），用于 Xbox 360 等，取自 Genres 或 Category 字段</summary>
+        public string Category => Genres != null && Genres.Count > 0 ? string.Join(", ", Genres) : "";
         public List<string> Languages { get; set; }
 
         public GameInfo()
