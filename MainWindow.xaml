@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:U_Wii_X_Fusion"
         mc:Ignorable="d"
-        Title="U-Wii-X Fusion" Height="1020" Width="1500"
+        Title="U-Wii-X Fusion" Height="1000" Width="1400"
         WindowStyle="SingleBorderWindow"
         ResizeMode="CanResizeWithGrip">
     <Grid>
@@ -209,24 +209,32 @@
                                         <ColumnDefinition Width="2*"/>
                                     </Grid.ColumnDefinitions>
 
-                                    <!-- 游戏简介 -->
+                                    <!-- 游戏简介：内容超出时右侧显示垂直滚动条可预览全文 -->
                                     <Border Grid.Column="0" BorderBrush="#DDDDDD" BorderThickness="1" CornerRadius="5" Padding="6" Background="White" Margin="0,0,6,0">
-                                        <StackPanel>
-                                            <TextBlock Text="游戏简介" FontSize="13" FontWeight="Bold" Margin="0,0,0,4"/>
-                                            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="*"/>
+                                            </Grid.RowDefinitions>
+                                            <TextBlock Grid.Row="0" Text="游戏简介" FontSize="13" FontWeight="Bold" Margin="0,0,0,4"/>
+                                            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" VerticalAlignment="Stretch">
                                                 <TextBlock x:Name="txtSynopsis" TextWrapping="Wrap" FontSize="12" Foreground="#333"/>
                                             </ScrollViewer>
-                                        </StackPanel>
+                                        </Grid>
                                     </Border>
 
-                                    <!-- 游戏信息 -->
+                                    <!-- 游戏信息：内容超出时右侧显示垂直滚动条可预览全文 -->
                                     <Border Grid.Column="1" BorderBrush="#DDDDDD" BorderThickness="1" CornerRadius="5" Padding="6" Background="White" Margin="6,0,0,0">
-                                        <StackPanel>
-                                            <TextBlock Text="游戏信息" FontSize="13" FontWeight="Bold" Margin="0,0,0,4"/>
-                                            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="*"/>
+                                            </Grid.RowDefinitions>
+                                            <TextBlock Grid.Row="0" Text="游戏信息" FontSize="13" FontWeight="Bold" Margin="0,0,0,4"/>
+                                            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" VerticalAlignment="Stretch">
                                                 <TextBlock x:Name="txtGameInfo" TextWrapping="Wrap" FontSize="12" Foreground="#333"/>
                                             </ScrollViewer>
-                                        </StackPanel>
+                                        </Grid>
                                     </Border>
                                 </Grid>
                             </Grid>
