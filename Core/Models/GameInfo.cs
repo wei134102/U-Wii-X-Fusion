@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.IO;
 using System.Runtime.CompilerServices;
 
 namespace U_Wii_X_Fusion.Core.Models
@@ -38,6 +39,19 @@ namespace U_Wii_X_Fusion.Core.Models
                     unitIndex++;
                 }
                 return $"{size:F2} {units[unitIndex]}";
+            }
+        }
+
+        /// <summary>游戏所在文件夹的父文件夹名称（用于 Wii U 列表“文件夹”列）</summary>
+        public string ParentFolderName
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(Path)) return string.Empty;
+                string gameDir = Directory.Exists(Path) ? Path : System.IO.Path.GetDirectoryName(Path);
+                if (string.IsNullOrEmpty(gameDir)) return string.Empty;
+                string parent = System.IO.Path.GetDirectoryName(gameDir);
+                return string.IsNullOrEmpty(parent) ? string.Empty : System.IO.Path.GetFileName(parent);
             }
         }
 

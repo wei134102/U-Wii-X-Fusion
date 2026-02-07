@@ -63,6 +63,11 @@
                                     <TextBox x:Name="txtCoverPath" Width="300" Margin="0,0,10,0"/>
                                     <Button x:Name="btnBrowseCoverPath" Content="浏览..."/>
                                 </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
+                                    <TextBlock Text="Wii U 封面路径:" Width="120" VerticalAlignment="Center"/>
+                                    <TextBox x:Name="txtWiiUCoverPath" Width="300" Margin="0,0,10,0"/>
+                                    <Button x:Name="btnBrowseWiiUCoverPath" Content="浏览..."/>
+                                </StackPanel>
                             </StackPanel>
                         </Expander>
                         <Expander Header="网络设置" Margin="0,0,0,10">
@@ -166,6 +171,14 @@
                                 </Button>
                             </StackPanel>
                             <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                                <Button x:Name="btnWiiList" Content="列表" Width="60" Padding="6,3" Margin="0,0,8,0" Click="BtnWiiList_Click">
+                                    <Button.ContextMenu>
+                                        <ContextMenu>
+                                            <MenuItem Header="清空列表" Click="MenuWiiListClear_Click"/>
+                                            <MenuItem Header="刷新列表" Click="MenuWiiListRefresh_Click"/>
+                                        </ContextMenu>
+                                    </Button.ContextMenu>
+                                </Button>
                                 <Button x:Name="btnRenameGames" Content="游戏重命名" Padding="8,4" Margin="0,0,0,0" ToolTip="将选中游戏按“中文名 [ID]\\ID.扩展名”规则重命名并整理到文件夹" Click="BtnRenameGames_Click"/>
                             </StackPanel>
                             </Grid>
@@ -266,43 +279,153 @@
                 </Grid>
             </TabItem>
             
-            <!-- Wii U标签页 -->
+            <!-- Wii U标签页：布局与 WII 一致，游戏列表 + 封面预览 + 游戏详情 -->
             <TabItem Header="WIIU">
                 <Grid Background="#F5F5F5">
-                    <StackPanel Margin="10">
-                        <TextBlock Text="Wii U游戏管理" FontSize="18" FontWeight="Bold" Margin="0,0,0,20"/>
-                        
-                        <!-- 设备状态 -->
-                        <Border BorderBrush="#DDDDDD" BorderThickness="1" CornerRadius="5" Padding="10" Margin="0,0,0,20" Background="White">
-                            <StackPanel>
-                                <TextBlock Text="设备状态" FontSize="14" FontWeight="Bold" Margin="0,0,0,10"/>
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="连接状态: " Width="100"/>
-                                    <TextBlock Text="未连接" Foreground="Red"/>
-                                    <Button Content="连接设备" Margin="20,0,0,0"/>
+                    <Grid Margin="10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="3*"/>
+                            <ColumnDefinition Width="2*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- 左侧：列表和操作 -->
+                        <Grid Grid.Column="0">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0" Text="Wii U 游戏管理" FontSize="18" FontWeight="Bold" Margin="0,0,0,15"/>
+
+                            <Grid Grid.Row="1" Margin="0,0,0,4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="游戏列表" FontSize="14" FontWeight="Bold" VerticalAlignment="Center"/>
+                                    <TextBlock x:Name="txtWiiUGameCount" Text="" FontSize="12" Foreground="#666" Margin="15,0,0,0" VerticalAlignment="Center"/>
+                                    <TextBlock x:Name="txtWiiUListStatus" Text="" FontSize="12" Foreground="#666" Margin="15,0,0,0" VerticalAlignment="Center"/>
                                 </StackPanel>
-                            </StackPanel>
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Right">
+                                    <Button x:Name="btnWiiUGameQuery" Content="Wii U 游戏数据库" Padding="4,2" Margin="0,0,8,0" Click="BtnWiiUGameQuery_Click"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <Grid Grid.Row="2" Margin="0,0,0,6">
+                                <StackPanel Orientation="Horizontal">
+                                    <Button x:Name="btnWiiUAddSource" Content="添加" Width="60" Padding="6,3" Margin="0,0,6,0" Click="BtnWiiUAddSource_Click">
+                                        <Button.ContextMenu>
+                                            <ContextMenu>
+                                                <MenuItem Header="添加文件" Click="MenuWiiUAddFile_Click"/>
+                                                <MenuItem Header="添加目录" Click="MenuWiiUAddDirectory_Click"/>
+                                            </ContextMenu>
+                                        </Button.ContextMenu>
+                                    </Button>
+                                    <Button x:Name="btnWiiUSelect" Content="选择" Width="70" Padding="6,3" Margin="0,0,6,0" Click="BtnWiiUSelect_Click">
+                                        <Button.ContextMenu>
+                                            <ContextMenu>
+                                                <MenuItem Header="全选" Click="BtnWiiUSelectAll_Click"/>
+                                                <MenuItem Header="反选" Click="BtnWiiUInvertSelect_Click"/>
+                                                <MenuItem Header="取消选择" Click="BtnWiiUClearSelect_Click"/>
+                                            </ContextMenu>
+                                        </Button.ContextMenu>
+                                    </Button>
+                                    <Button x:Name="btnWiiURemoveSelected" Content="删除选中" Width="80" Padding="6,3" Margin="0,0,6,0" ToolTip="从列表中移除勾选的游戏" Click="BtnWiiURemoveSelected_Click"/>
+                                    <Button x:Name="btnWiiUCopy" Content="拷贝" Width="70" Padding="6,3" Margin="0,0,6,0" ToolTip="拷贝选中游戏到指定分区的 install 文件夹" Click="BtnWiiUCopy_Click"/>
+                                    <Button x:Name="btnWiiUList" Content="列表" Width="60" Padding="6,3" Margin="0,0,6,0" Click="BtnWiiUList_Click">
+                                        <Button.ContextMenu>
+                                            <ContextMenu>
+                                                <MenuItem Header="清空列表" Click="MenuWiiUListClear_Click"/>
+                                                <MenuItem Header="刷新列表" Click="MenuWiiUListRefresh_Click"/>
+                                            </ContextMenu>
+                                        </Button.ContextMenu>
+                                    </Button>
+                                </StackPanel>
+                            </Grid>
+
+                            <Grid Grid.Row="3">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="2*"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+
+                                <DataGrid Grid.Row="0" x:Name="dgGamesWiiU" AutoGenerateColumns="False" Background="White"
+                                          SelectionMode="Single" SelectionUnit="FullRow" CanUserAddRows="False"
+                                          GridLinesVisibility="Horizontal" HeadersVisibility="Column"
+                                          SelectionChanged="DgGamesWiiU_SelectionChanged">
+                                    <DataGrid.ContextMenu>
+                                        <ContextMenu>
+                                            <MenuItem Header="搜索游戏视频" Click="MenuWiiUSearchGameVideo_Click"/>
+                                            <MenuItem Header="打开游戏位置" Click="MenuWiiUOpenGameLocation_Click"/>
+                                        </ContextMenu>
+                                    </DataGrid.ContextMenu>
+                                    <DataGrid.Columns>
+                                        <DataGridCheckBoxColumn Header="选" Width="36" Binding="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                        <DataGridTextColumn Header="TITLEID" Width="100" Binding="{Binding GameId}"/>
+                                        <DataGridTextColumn Header="游戏名称" Width="*" MinWidth="120" Binding="{Binding Title}"/>
+                                        <DataGridTextColumn Header="中文名称" Width="*" MinWidth="120" Binding="{Binding ChineseTitle}"/>
+                                        <DataGridTextColumn Header="大小" Width="90" Binding="{Binding FormattedSize}" SortMemberPath="Size"/>
+                                        <DataGridTextColumn Header="文件夹" Width="120" Binding="{Binding ParentFolderName}"/>
+                                        <DataGridTextColumn Header="路径" Width="200" Binding="{Binding Path}" Visibility="Collapsed"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+
+                                <Grid Grid.Row="1" Margin="0,8,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="2*"/>
+                                        <ColumnDefinition Width="2*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Border Grid.Column="0" BorderBrush="#DDDDDD" BorderThickness="1" CornerRadius="5" Padding="6" Background="White" Margin="0,0,6,0">
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="*"/>
+                                            </Grid.RowDefinitions>
+                                            <TextBlock Grid.Row="0" Text="游戏简介" FontSize="13" FontWeight="Bold" Margin="0,0,0,4"/>
+                                            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" VerticalAlignment="Stretch">
+                                                <TextBlock x:Name="txtSynopsisWiiU" TextWrapping="Wrap" FontSize="12" Foreground="#333"/>
+                                            </ScrollViewer>
+                                        </Grid>
+                                    </Border>
+                                    <Border Grid.Column="1" BorderBrush="#DDDDDD" BorderThickness="1" CornerRadius="5" Padding="6" Background="White" Margin="6,0,0,0">
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="*"/>
+                                            </Grid.RowDefinitions>
+                                            <TextBlock Grid.Row="0" Text="游戏信息" FontSize="13" FontWeight="Bold" Margin="0,0,0,4"/>
+                                            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" VerticalAlignment="Stretch">
+                                                <TextBlock x:Name="txtGameInfoWiiU" TextWrapping="Wrap" FontSize="12" Foreground="#333"/>
+                                            </ScrollViewer>
+                                        </Grid>
+                                    </Border>
+                                </Grid>
+                            </Grid>
+                        </Grid>
+
+                        <!-- 右侧：封面预览 -->
+                        <Border Grid.Column="1" BorderBrush="#DDDDDD" BorderThickness="1" CornerRadius="5" Padding="8" Background="White" Margin="12,0,0,0">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+                                <GroupBox Header="Disc 封面" FontSize="12" Margin="0,0,0,4">
+                                    <Border Background="#F5F5F5" Padding="4">
+                                        <Image x:Name="imgDiscCoverWiiU" Stretch="Uniform"/>
+                                    </Border>
+                                </GroupBox>
+                                <GroupBox Header="3D 封面" Grid.Row="1" FontSize="12" Margin="0,4,0,0">
+                                    <Border Background="#F5F5F5" Padding="4">
+                                        <Image x:Name="img3DCoverWiiU" Stretch="Uniform"/>
+                                    </Border>
+                                </GroupBox>
+                            </Grid>
                         </Border>
-                        
-                        <!-- 游戏列表 -->
-                        <TextBlock Text="游戏列表" FontSize="14" FontWeight="Bold" Margin="0,0,0,10"/>
-                        <DataGrid AutoGenerateColumns="False" Height="300" Background="White">
-                            <DataGrid.Columns>
-                                <DataGridTextColumn Header="游戏名称" Width="*"/>
-                                <DataGridTextColumn Header="大小" Width="100"/>
-                                <DataGridTextColumn Header="格式" Width="80"/>
-                                <DataGridTextColumn Header="状态" Width="80"/>
-                            </DataGrid.Columns>
-                        </DataGrid>
-                        
-                        <!-- 操作按钮 -->
-                        <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
-                            <Button Content="添加游戏" Margin="0,0,10,0"/>
-                            <Button Content="删除游戏" Margin="0,0,10,0"/>
-                            <Button Content="传输到设备" Margin="0,0,10,0"/>
-                            <Button Content="刷新列表"/>
-                        </StackPanel>
-                    </StackPanel>
+                    </Grid>
                 </Grid>
             </TabItem>
             

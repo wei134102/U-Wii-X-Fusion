@@ -4,9 +4,11 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
@@ -38,12 +40,20 @@ namespace U_Wii_X_Fusion
         private readonly List<GameInfo> _disk2Games = new List<GameInfo>();
         private List<GameInfo> _scannedGames;  // 当前正在显示/操作的 Wii/NGC 游戏列表（引用上述三者之一）
         private string _coverPath;
+        private string _wiiuCoverPath;
         private readonly WiiGameIdentifier _wiiIdentifier = new WiiGameIdentifier();
         private readonly NgcGameIdentifier _ngcIdentifier = new NgcGameIdentifier();
         private enum GameListSource { Directory, Disk1, Disk2 }
         private GameListSource _currentListSource = GameListSource.Directory;
         private string _disk1Root;
         private string _disk2Root;
+
+        // Wii U：数据库与游戏列表
+        private WiiUGameDatabase _wiiuDatabase;
+        private WiiUGamesJsonLookup _wiiuGamesJsonLookup;
+        private WiiUTitlesJsonLookup _wiiuTitlesJsonLookup;
+        private readonly List<GameInfo> _wiiuGames = new List<GameInfo>();
+        private readonly WiiUGameIdentifier _wiiuIdentifier = new WiiUGameIdentifier();
 
         public MainWindow()
         {
@@ -53,14 +63,24 @@ namespace U_Wii_X_Fusion
             _scannedGames = _directoryGames;
             dgGames.ItemsSource = _scannedGames;
             InitializeDatabase();
+            InitializeWiiUDatabase();
+            if (dgGamesWiiU != null)
+                dgGamesWiiU.ItemsSource = _wiiuGames;
             SetupEventHandlers();
             LoadSettings();
             LoadCoverPath();
+            LoadWiiUCoverPath();
             LoadDrives();
             UpdateGameCount(); // 初始化时显示 0
             UpdateWiiListStatus();
+            UpdateWiiUGameCount();
+            UpdateWiiUListStatus();
             var statusTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1.2) };
-            statusTimer.Tick += (s, _) => UpdateWiiListStatus();
+            statusTimer.Tick += (s, _) =>
+            {
+                UpdateWiiListStatus();
+                UpdateWiiUListStatus();
+            };
             statusTimer.Start();
         }
 
@@ -86,10 +106,32 @@ namespace U_Wii_X_Fusion
             }
         }
 
+        private void InitializeWiiUDatabase()
+        {
+            try
+            {
+                var dataDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data");
+                _wiiuDatabase = new WiiUGameDatabase(
+                    Path.Combine(dataDir, "wiiutdb.xml"),
+                    Path.Combine(dataDir, "gametitle_wiiu.txt"));
+                _wiiuDatabase.Initialize();
+                _wiiuTitlesJsonLookup = new WiiUTitlesJsonLookup(Path.Combine(dataDir, "wiiu_titles.json"));
+                _wiiuTitlesJsonLookup.Initialize();
+                _wiiuGamesJsonLookup = new WiiUGamesJsonLookup(Path.Combine(dataDir, "wiiu_games.json"));
+                _wiiuGamesJsonLookup.Initialize();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Wii U database init: {ex.Message}");
+            }
+        }
+
         private void SetupEventHandlers()
         {
             btnSaveSettings.Click += BtnSaveSettings_Click;
             btnBrowseCoverPath.Click += BtnBrowseCoverPath_Click;
+            if (btnBrowseWiiUCoverPath != null)
+                btnBrowseWiiUCoverPath.Click += BtnBrowseWiiUCoverPath_Click;
             btnBrowseGamePath.Click += BtnBrowseGamePath_Click;
             btnBrowseDatabasePath.Click += BtnBrowseDatabasePath_Click;
             btnCheckUpdate.Click += BtnCheckUpdate_Click;
@@ -569,6 +611,31 @@ namespace U_Wii_X_Fusion
             _scannedGames = _disk2Games;
             dgGames.ItemsSource = _scannedGames;
             dgGames.Items.Refresh();
+            UpdateGameCount();
+            UpdateWiiListStatus();
+        }
+
+        private void BtnWiiList_Click(object sender, RoutedEventArgs e)
+        {
+            if (btnWiiList?.ContextMenu != null)
+            {
+                btnWiiList.ContextMenu.PlacementTarget = btnWiiList;
+                btnWiiList.ContextMenu.IsOpen = true;
+            }
+        }
+
+        private void MenuWiiListClear_Click(object sender, RoutedEventArgs e)
+        {
+            if (_scannedGames == null) return;
+            _scannedGames.Clear();
+            dgGames?.Items.Refresh();
+            UpdateGameCount();
+            UpdateWiiListStatus();
+        }
+
+        private void MenuWiiListRefresh_Click(object sender, RoutedEventArgs e)
+        {
+            dgGames?.Items.Refresh();
             UpdateGameCount();
             UpdateWiiListStatus();
         }
@@ -1060,16 +1127,22 @@ namespace U_Wii_X_Fusion
                     continue;
                 }
 
-                if (string.IsNullOrWhiteSpace(game.Path) || !File.Exists(game.Path))
+                if (string.IsNullOrWhiteSpace(game.Path))
                 {
                     failed++;
-                    errors.Add($"{game.Title ?? id}: 源文件不存在。");
+                    errors.Add($"{game.Title ?? id}: 源路径为空。");
+                    continue;
+                }
+                string srcPath = game.Path;
+                if (!File.Exists(srcPath) && !Directory.Exists(srcPath))
+                {
+                    failed++;
+                    errors.Add($"{game.Title ?? id}: 源文件或目录不存在。");
                     continue;
                 }
 
                 try
                 {
-                    string srcPath = game.Path;
                     string ext = Path.GetExtension(srcPath);
                     string displayName = !string.IsNullOrWhiteSpace(game.ChineseTitle)
                         ? game.ChineseTitle
@@ -1085,66 +1158,64 @@ namespace U_Wii_X_Fusion
                     if (!Directory.Exists(destFolder))
                         Directory.CreateDirectory(destFolder);
 
+                    var sources = new List<string>();
                     if (isNgc)
                     {
-                        // NGC Dolphin 标准结构：game.iso (+ disc2.iso + sys/)
+                        // NGC：game.iso、disc2.iso、sys 目录
                         string srcDir = Path.GetDirectoryName(srcPath);
                         string extLower = ext.ToLowerInvariant();
                         if (string.IsNullOrEmpty(extLower))
                             extLower = ".iso";
 
-                        // 主盘 game.iso
                         string srcGame = srcPath;
                         if (!string.Equals(Path.GetFileName(srcPath), "game" + extLower, StringComparison.OrdinalIgnoreCase))
                         {
-                            // 如果扫描的是 disc2.iso 之类，尝试回到 game.iso
                             string altGame = Path.Combine(srcDir ?? string.Empty, "game" + extLower);
                             if (File.Exists(altGame))
                                 srcGame = altGame;
                         }
-                        string destGame = Path.Combine(destFolder, "game" + extLower);
-                        File.Copy(srcGame, destGame, overwrite: false);
-
-                        // 第二张盘 disc2.iso
+                        sources.Add(srcGame);
                         string srcDisc2 = Path.Combine(srcDir ?? string.Empty, "disc2" + extLower);
                         if (File.Exists(srcDisc2))
-                        {
-                            string destDisc2 = Path.Combine(destFolder, "disc2" + extLower);
-                            File.Copy(srcDisc2, destDisc2, overwrite: false);
-                        }
-
-                        // sys 目录
+                            sources.Add(srcDisc2);
                         string srcSysDir = Path.Combine(srcDir ?? string.Empty, "sys");
                         if (Directory.Exists(srcSysDir))
-                        {
-                            string destSysDir = Path.Combine(destFolder, "sys");
-                            CopyDirectoryRecursive(srcSysDir, destSysDir);
-                        }
+                            sources.Add(srcSysDir);
                     }
                     else if (ext.Equals(".wbfs", StringComparison.OrdinalIgnoreCase))
                     {
                         string srcDir = Path.GetDirectoryName(srcPath);
                         string baseName = Path.GetFileNameWithoutExtension(srcPath);
-                        var parts = new[] { ".wbfs", ".wbf1", ".wbf2", ".wbf3", ".wbf4" };
-                        foreach (var partExt in parts)
+                        foreach (var partExt in new[] { ".wbfs", ".wbf1", ".wbf2", ".wbf3", ".wbf4" })
                         {
                             string partSrc = Path.Combine(srcDir, baseName + partExt);
-                            if (!File.Exists(partSrc)) continue;
-
-                            string destName = id + partExt;
-                            string destPath = Path.Combine(destFolder, destName);
-                            File.Copy(partSrc, destPath, overwrite: false);
+                            if (File.Exists(partSrc))
+                                sources.Add(partSrc);
                         }
                     }
                     else
                     {
-                        string destName = id + ext.ToLowerInvariant();
-                        string destPath = Path.Combine(destFolder, destName);
-                        File.Copy(srcPath, destPath, overwrite: false);
+                        sources.Add(srcPath);
                     }
 
-                    existingIds.Add(id);
-                    copied++;
+                    if (sources.Count == 0)
+                    {
+                        failed++;
+                        errors.Add($"{game.Title ?? id}: 未找到可拷贝的源文件。");
+                        continue;
+                    }
+
+                    IntPtr hwnd = new WindowInteropHelper(this).Handle;
+                    if (ShellCopyWithProgress(sources, destFolder, hwnd))
+                    {
+                        existingIds.Add(id);
+                        copied++;
+                    }
+                    else
+                    {
+                        failed++;
+                        errors.Add($"{game.Title ?? id}: 拷贝取消或失败。");
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -1399,6 +1470,669 @@ namespace U_Wii_X_Fusion
             }
         }
 
+        #region Wii U 游戏列表与详情
+
+        private void DgGamesWiiU_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (dgGamesWiiU?.SelectedItem is GameInfo game)
+            {
+                UpdateWiiUGameVisuals(game);
+                UpdateWiiUGameExtraInfo(game);
+            }
+            else
+            {
+                UpdateWiiUGameVisuals(null);
+                UpdateWiiUGameExtraInfo(null);
+            }
+        }
+
+        private void UpdateWiiUGameCount()
+        {
+            if (txtWiiUGameCount == null) return;
+            int n = _wiiuGames?.Count ?? 0;
+            txtWiiUGameCount.Text = n > 0 ? $"共 {n} 款游戏" : "";
+        }
+
+        private void UpdateWiiUListStatus()
+        {
+            if (txtWiiUListStatus == null) return;
+            int selCount = _wiiuGames?.Count(g => g.IsSelected) ?? 0;
+            long selSize = _wiiuGames?.Where(g => g.IsSelected).Sum(g => g.Size) ?? 0;
+            txtWiiUListStatus.Text = selCount > 0 ? $"  选中: {selCount} 个，共 {FormatSize(selSize)}" : "";
+        }
+
+        private void UpdateWiiUGameVisuals(GameInfo game)
+        {
+            if (imgDiscCoverWiiU == null || img3DCoverWiiU == null) return;
+            string basePath = !string.IsNullOrEmpty(_wiiuCoverPath) ? _wiiuCoverPath : _coverPath;
+            if (game == null || string.IsNullOrEmpty(game.GameId) || string.IsNullOrEmpty(basePath))
+            {
+                imgDiscCoverWiiU.Source = null;
+                img3DCoverWiiU.Source = null;
+                return;
+            }
+            imgDiscCoverWiiU.Source = LoadBitmapOrNull(TryResolveCoverPath(game.GameId, "disc", basePath));
+            img3DCoverWiiU.Source = LoadBitmapOrNull(TryResolveCoverPath(game.GameId, "3d", basePath));
+        }
+
+        private void UpdateWiiUGameExtraInfo(GameInfo game)
+        {
+            if (txtSynopsisWiiU == null || txtGameInfoWiiU == null) return;
+            if (game == null)
+            {
+                txtSynopsisWiiU.Text = string.Empty;
+                txtGameInfoWiiU.Text = string.Empty;
+                return;
+            }
+            // 若列表项未含简介，尝试从数据库再取一次（合并 DB 的 synopsis）
+            var dbGame = _wiiuDatabase?.GetGame(game.GameId);
+            string synopsis = !string.IsNullOrWhiteSpace(game.Synopsis) ? game.Synopsis : dbGame?.Synopsis;
+            if (!string.IsNullOrWhiteSpace(synopsis))
+                txtSynopsisWiiU.Text = synopsis.Trim();
+            else
+                txtSynopsisWiiU.Text = "暂无简介。";
+
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine($"游戏ID: {game.GameId}");
+            if (!string.IsNullOrWhiteSpace(game.Title)) sb.AppendLine($"游戏名称: {game.Title}");
+            if (!string.IsNullOrWhiteSpace(game.ChineseTitle)) sb.AppendLine($"中文名称: {game.ChineseTitle}");
+            if (!string.IsNullOrWhiteSpace(game.Platform)) sb.AppendLine($"平台: {game.Platform}");
+            if (!string.IsNullOrWhiteSpace(game.Region)) sb.AppendLine($"区域: {game.Region}");
+            if (game.Players > 0) sb.AppendLine($"玩家数量: {game.Players}");
+            if (!string.IsNullOrWhiteSpace(game.Publisher)) sb.AppendLine($"发行商: {game.Publisher}");
+            if (!string.IsNullOrWhiteSpace(game.Developer)) sb.AppendLine($"开发商: {game.Developer}");
+            if (game.Controllers != null && game.Controllers.Any()) sb.AppendLine("控制器: " + string.Join(", ", game.Controllers));
+            if (game.Genres != null && game.Genres.Any()) sb.AppendLine("游戏类型: " + string.Join(", ", game.Genres));
+            if (game.Languages != null && game.Languages.Any()) sb.AppendLine("支持语言: " + string.Join(", ", game.Languages));
+            txtGameInfoWiiU.Text = sb.ToString();
+        }
+
+        private void EnrichGameFromWiiUDatabase(GameInfo game, string gameId)
+        {
+            var dbGame = _wiiuDatabase?.GetGame(gameId);
+            if (dbGame == null && gameId.Length > 6 && gameId.IndexOfAny(new[] { ' ', '[' }) > 0)
+            {
+                string extracted = gameId.Split(new[] { ' ', '[' }, 2)[0].Trim();
+                if (extracted.Length >= 4 && extracted.Length <= 6)
+                {
+                    dbGame = _wiiuDatabase?.GetGame(extracted);
+                    if (dbGame != null) game.GameId = extracted;
+                }
+            }
+            if (dbGame != null)
+            {
+                game.GameId = dbGame.GameId; // TITLEID 列显示 wiiutdb.xml 的 <id> 值（如 AALP01）
+                game.Title = dbGame.Title ?? game.Title;
+                game.ChineseTitle = dbGame.ChineseTitle ?? string.Empty;
+                game.Platform = dbGame.Platform ?? game.Platform;
+                game.PlatformType = dbGame.PlatformType;
+                game.Region = dbGame.Region;
+                game.Players = dbGame.Players;
+                game.Publisher = dbGame.Publisher;
+                game.Developer = dbGame.Developer;
+                game.Synopsis = dbGame.Synopsis;
+                game.Controllers = new List<string>(dbGame.Controllers ?? new List<string>());
+                game.Genres = new List<string>(dbGame.Genres ?? new List<string>());
+                game.Languages = new List<string>(dbGame.Languages ?? new List<string>());
+            }
+            else
+            {
+                if (string.IsNullOrWhiteSpace(game.ChineseTitle)) game.ChineseTitle = string.Empty;
+            }
+        }
+
+        private static string ExtractWiiUGameIdFromFileName(string baseName)
+        {
+            if (string.IsNullOrEmpty(baseName)) return null;
+            // 纯 4~6 位字母数字视为 ID（如 AAFE01）
+            if (baseName.Length >= 4 && baseName.Length <= 6 && baseName.All(c => char.IsLetterOrDigit(c)))
+                return baseName.ToUpperInvariant();
+            // 常见格式： "中文名 [ID]" 或 "ID.wud"
+            int bracket = baseName.IndexOf('[');
+            if (bracket >= 0)
+            {
+                int close = baseName.IndexOf(']', bracket);
+                if (close > bracket + 1)
+                {
+                    string id = baseName.Substring(bracket + 1, close - bracket - 1).Trim();
+                    if (id.Length >= 4 && id.Length <= 6 && id.All(c => char.IsLetterOrDigit(c)))
+                        return id.ToUpperInvariant();
+                }
+            }
+            return null;
+        }
+
+        private void ScanAndAddWiiUGamesFromDirectory(string path, bool clearExisting)
+        {
+            if (string.IsNullOrWhiteSpace(path) || !Directory.Exists(path))
+            {
+                MessageBox.Show("所选目录不存在。", "错误", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+            if (clearExisting) _wiiuGames.Clear();
+            try
+            {
+                // 1) 扫描带 title.tmd 的游戏文件夹：本体(50000)/DLC(5000C)/更新(5000E) 合并为同一游戏大小
+                ScanAndAddWiiUGamesFromTitleTmdFolders(path);
+
+                // 2) 扫描单文件镜像 .wud / .wux / .rpx
+                var exts = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { ".wud", ".wux", ".rpx" };
+                foreach (string file in Directory.GetFiles(path, "*.*", SearchOption.AllDirectories))
+                {
+                    if (!exts.Contains(Path.GetExtension(file))) continue;
+                    var game = _wiiuIdentifier.IdentifyGame(file);
+                    if (game == null) continue;
+                    string baseName = Path.GetFileNameWithoutExtension(file);
+                    string idForDb = game.GameId ?? ExtractWiiUGameIdFromFileName(baseName) ?? baseName;
+                    if (string.IsNullOrWhiteSpace(game.GameId)) game.GameId = idForDb;
+                    EnrichGameFromWiiUDatabase(game, idForDb);
+                    _wiiuGames.Add(game);
+                }
+
+                dgGamesWiiU?.Items.Refresh();
+                UpdateWiiUGameCount();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"扫描 Wii U 游戏时出错: {ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        /// <summary>
+        /// 扫描包含 title.tmd 的游戏文件夹。递归查找所有子目录；title.tmd 可在文件夹根或 meta 子目录下。
+        /// 50000=本体，5000C=DLC，5000E=更新；同一游戏（相同后 8 位）的本体+DLC+更新合并为一条，大小为三者之和。
+        /// </summary>
+        private void ScanAndAddWiiUGamesFromTitleTmdFolders(string parentPath)
+        {
+            const string titleTmdName = "title.tmd";
+            var foldersWithTmd = new List<(string FolderPath, string TmdPath)>();
+
+            try
+            {
+                CollectFoldersWithTitleTmd(parentPath, titleTmdName, foldersWithTmd);
+            }
+            catch { /* 无权限等 */ }
+
+            if (foldersWithTmd.Count == 0) return;
+
+            // 每个文件夹：路径、大小、Title ID、类型
+            var entries = new List<(string FolderPath, long Size, string TitleIdHex, WiiUTitleTmdReader.WiiUContentType Type)>();
+            foreach (var (folderPath, tmdPath) in foldersWithTmd)
+            {
+                if (!WiiUTitleTmdReader.TryReadTitleId(tmdPath, out string titleIdHex) || string.IsNullOrEmpty(titleIdHex))
+                    continue;
+                long size = GetDirectorySize(folderPath);
+                var type = WiiUTitleTmdReader.GetContentType(titleIdHex);
+                entries.Add((folderPath, size, titleIdHex, type));
+            }
+
+            // 按“同一游戏”分组：后 8 位十六进制相同则为一组
+            var groups = entries
+                .GroupBy(e => WiiUTitleTmdReader.GetGameUniqueSuffix(e.TitleIdHex), StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            foreach (var group in groups)
+            {
+                long totalSize = group.Sum(e => e.Size);
+                // 优先用本体(50000)的文件夹作为主路径和标题，否则用该组第一个
+                var baseEntry = group.FirstOrDefault(e => e.Type == WiiUTitleTmdReader.WiiUContentType.Base);
+                if (baseEntry.FolderPath == null)
+                    baseEntry = group.First();
+                string baseTitleId = WiiUTitleTmdReader.GetBaseTitleId(baseEntry.TitleIdHex);
+                string title = Path.GetFileName(baseEntry.FolderPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+                if (title.Length > 4 && title[3] == '-' && char.IsDigit(title[0]))
+                    title = title.Substring(4).Trim();
+
+                // 优先用 wiiu_titles.json：TitleId → game_id、中文名、英文名、封面 ID 一致
+                string displayGameId = baseTitleId;
+                string chineseName = string.Empty;
+                string englishName = title;
+                var titlesEntry = _wiiuTitlesJsonLookup?.GetByTitleId(baseTitleId);
+                if (titlesEntry != null && !string.IsNullOrEmpty(titlesEntry.GameId))
+                {
+                    displayGameId = titlesEntry.GameId;
+                    chineseName = titlesEntry.ChineseName ?? string.Empty;
+                    if (!string.IsNullOrWhiteSpace(titlesEntry.EnglishName))
+                        englishName = titlesEntry.EnglishName;
+                }
+                else
+                {
+                    // 回退：wiiu_games.json → ProductCode → wiiutdb/gametitle 解析 game_id
+                    var jsonEntry = _wiiuGamesJsonLookup?.GetByTitleId(baseTitleId);
+                    if (jsonEntry != null)
+                    {
+                        string coverId = _wiiuDatabase?.ResolveGameIdFromProductCode(jsonEntry.ProductCode);
+                        if (!string.IsNullOrEmpty(coverId))
+                            displayGameId = coverId;
+                    }
+                }
+
+                var game = new GameInfo
+                {
+                    GameId = displayGameId,
+                    Title = englishName,
+                    ChineseTitle = chineseName,
+                    Platform = "Wii U",
+                    PlatformType = "WiiU",
+                    Path = baseEntry.FolderPath,
+                    Size = totalSize,
+                    Format = "文件夹",
+                    Status = "已识别"
+                };
+                EnrichGameFromWiiUDatabase(game, displayGameId);
+                if (titlesEntry != null)
+                {
+                    game.ChineseTitle = chineseName;
+                    game.Title = englishName;
+                }
+                _wiiuGames.Add(game);
+            }
+        }
+
+        /// <summary>递归收集所有包含 title.tmd 的文件夹。支持 title.tmd 在根或 meta 子目录下。</summary>
+        private static void CollectFoldersWithTitleTmd(string dir, string titleTmdName, List<(string FolderPath, string TmdPath)> result)
+        {
+            try
+            {
+                string tmdInRoot = Path.Combine(dir, titleTmdName);
+                if (File.Exists(tmdInRoot))
+                {
+                    result.Add((dir, tmdInRoot));
+                    return; // 当前目录已是游戏目录，不再深入子目录（避免把 content 等子夹当游戏）
+                }
+                string metaTmd = Path.Combine(dir, "meta", titleTmdName);
+                if (File.Exists(metaTmd))
+                {
+                    result.Add((dir, metaTmd));
+                    return;
+                }
+                foreach (string sub in Directory.GetDirectories(dir))
+                {
+                    CollectFoldersWithTitleTmd(sub, titleTmdName, result);
+                }
+            }
+            catch { /* 无权限等 */ }
+        }
+
+        private static long GetDirectorySize(string dir)
+        {
+            long total = 0;
+            try
+            {
+                foreach (string file in Directory.GetFiles(dir, "*.*", SearchOption.AllDirectories))
+                {
+                    try { total += new FileInfo(file).Length; }
+                    catch { }
+                }
+            }
+            catch { }
+            return total;
+        }
+
+        private void BtnWiiUAddSource_Click(object sender, RoutedEventArgs e)
+        {
+            if (btnWiiUAddSource?.ContextMenu != null)
+            {
+                btnWiiUAddSource.ContextMenu.PlacementTarget = btnWiiUAddSource;
+                btnWiiUAddSource.ContextMenu.IsOpen = true;
+            }
+        }
+
+        private void MenuWiiUAddDirectory_Click(object sender, RoutedEventArgs e)
+        {
+            using (var dlg = new System.Windows.Forms.FolderBrowserDialog())
+            {
+                dlg.Description = "选择包含 Wii U 游戏的目录（含 title.tmd 的文件夹 或 .wud/.wux/.rpx 镜像）";
+                if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                    ScanAndAddWiiUGamesFromDirectory(dlg.SelectedPath, clearExisting: false);
+            }
+        }
+
+        private void MenuWiiUAddFile_Click(object sender, RoutedEventArgs e)
+        {
+            var ofd = new OpenFileDialog
+            {
+                Title = "选择 Wii U 游戏文件",
+                Filter = "Wii U 镜像 (*.wud;*.wux;*.rpx)|*.wud;*.wux;*.rpx|所有文件 (*.*)|*.*",
+                Multiselect = true
+            };
+            if (ofd.ShowDialog() != true) return;
+            foreach (var dir in ofd.FileNames.Select(Path.GetDirectoryName).Where(d => !string.IsNullOrEmpty(d) && Directory.Exists(d)).Distinct(StringComparer.OrdinalIgnoreCase))
+                ScanAndAddWiiUGamesFromDirectory(dir, clearExisting: false);
+        }
+
+        private void BtnWiiUSelect_Click(object sender, RoutedEventArgs e)
+        {
+            if (btnWiiUSelect?.ContextMenu != null)
+            {
+                btnWiiUSelect.ContextMenu.PlacementTarget = btnWiiUSelect;
+                btnWiiUSelect.ContextMenu.IsOpen = true;
+            }
+        }
+
+        private void BtnWiiUSelectAll_Click(object sender, RoutedEventArgs e)
+        {
+            foreach (var g in _wiiuGames) g.IsSelected = true;
+            dgGamesWiiU?.Items.Refresh();
+            UpdateWiiUListStatus();
+        }
+
+        private void BtnWiiUInvertSelect_Click(object sender, RoutedEventArgs e)
+        {
+            foreach (var g in _wiiuGames) g.IsSelected = !g.IsSelected;
+            dgGamesWiiU?.Items.Refresh();
+            UpdateWiiUListStatus();
+        }
+
+        private void BtnWiiUClearSelect_Click(object sender, RoutedEventArgs e)
+        {
+            foreach (var g in _wiiuGames) g.IsSelected = false;
+            dgGamesWiiU?.Items.Refresh();
+            UpdateWiiUListStatus();
+        }
+
+        private void BtnWiiUList_Click(object sender, RoutedEventArgs e)
+        {
+            if (btnWiiUList?.ContextMenu != null)
+            {
+                btnWiiUList.ContextMenu.PlacementTarget = btnWiiUList;
+                btnWiiUList.ContextMenu.IsOpen = true;
+            }
+        }
+
+        private void MenuWiiUListClear_Click(object sender, RoutedEventArgs e)
+        {
+            _wiiuGames?.Clear();
+            dgGamesWiiU?.Items.Refresh();
+            UpdateWiiUGameCount();
+            UpdateWiiUListStatus();
+        }
+
+        private void MenuWiiUListRefresh_Click(object sender, RoutedEventArgs e)
+        {
+            dgGamesWiiU?.Items.Refresh();
+            UpdateWiiUGameCount();
+            UpdateWiiUListStatus();
+        }
+
+        private void BtnWiiURemoveSelected_Click(object sender, RoutedEventArgs e)
+        {
+            var toRemove = _wiiuGames.Where(g => g.IsSelected).ToList();
+            if (toRemove.Count == 0)
+            {
+                MessageBox.Show("请先勾选要移除的游戏。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+            foreach (var g in toRemove) _wiiuGames.Remove(g);
+            dgGamesWiiU?.Items.Refresh();
+            UpdateWiiUGameCount();
+            UpdateWiiUListStatus();
+        }
+
+        private void BtnWiiUGameQuery_Click(object sender, RoutedEventArgs e)
+        {
+            string coverPath = !string.IsNullOrEmpty(_wiiuCoverPath) ? _wiiuCoverPath : _coverPath;
+            var queryWindow = new WiiUGameQueryWindow(coverPath)
+            {
+                Owner = this
+            };
+            queryWindow.ShowDialog();
+        }
+
+        private void MenuWiiUSearchGameVideo_Click(object sender, RoutedEventArgs e)
+        {
+            var game = dgGamesWiiU?.SelectedItem as GameInfo ?? _wiiuGames.FirstOrDefault(g => g.IsSelected);
+            if (game == null) { MessageBox.Show("请先选中或勾选一个游戏。", "提示", MessageBoxButton.OK, MessageBoxImage.Information); return; }
+            string query = (game.Title ?? game.ChineseTitle ?? game.GameId) + " Wii U";
+            try { Process.Start(new ProcessStartInfo("https://www.youtube.com/results?search_query=" + Uri.EscapeDataString(query)) { UseShellExecute = true }); }
+            catch (Exception ex) { MessageBox.Show("无法打开浏览器：" + ex.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Warning); }
+        }
+
+        private void MenuWiiUOpenGameLocation_Click(object sender, RoutedEventArgs e)
+        {
+            var game = dgGamesWiiU?.SelectedItem as GameInfo ?? _wiiuGames.FirstOrDefault(g => g.IsSelected);
+            if (game == null || string.IsNullOrEmpty(game.Path)) { MessageBox.Show("请先选中或勾选一个游戏，且该游戏有路径。", "提示", MessageBoxButton.OK, MessageBoxImage.Information); return; }
+            string folder = Path.GetDirectoryName(game.Path);
+            if (string.IsNullOrEmpty(folder) || !Directory.Exists(folder)) { MessageBox.Show("游戏所在目录不存在。", "提示", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
+            try { Process.Start(new ProcessStartInfo(folder) { UseShellExecute = true }); }
+            catch (Exception ex) { MessageBox.Show("无法打开文件夹：" + ex.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Warning); }
+        }
+
+        private void BtnWiiUCopy_Click(object sender, RoutedEventArgs e)
+        {
+            var selected = _wiiuGames.Where(g => g.IsSelected).ToList();
+            if (selected.Count == 0)
+            {
+                MessageBox.Show("请先勾选要拷贝的游戏。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            using (var dlg = new System.Windows.Forms.FolderBrowserDialog())
+            {
+                dlg.Description = "选择目标分区根目录（将拷贝到该分区下的 install 文件夹）";
+                dlg.ShowNewFolderButton = true;
+                if (dlg.ShowDialog() != System.Windows.Forms.DialogResult.OK)
+                    return;
+                string root = dlg.SelectedPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+                string installPath = Path.Combine(root, "install");
+                if (string.IsNullOrEmpty(root))
+                    return;
+
+                var addedBaseIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase); // 本轮已加入 toCopy 的 base titleId，用于去重
+                var toCopy = new List<GameInfo>();
+                foreach (var game in selected)
+                {
+                    if (string.IsNullOrEmpty(game.Path)) continue;
+                    if (Directory.Exists(game.Path))
+                    {
+                        // 仅当该游戏的本体+DLC+升级档在 install 中全部存在时才跳过；任一部分缺失则加入 toCopy 用于补全
+                        List<string> contentFolders = GetWiiUGameContentFolders(game.Path);
+                        bool allContentExists = contentFolders.Count > 0 && contentFolders.All(f =>
+                            Directory.Exists(Path.Combine(installPath, Path.GetFileName(f.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)))));
+                        if (allContentExists)
+                            continue;
+                        string titleId = GetTitleIdFromGamePath(game.Path);
+                        if (!string.IsNullOrEmpty(titleId) && addedBaseIds.Contains(titleId.ToUpperInvariant()))
+                            continue; // 同一游戏（相同 base）已在 toCopy 中，避免重复
+                        toCopy.Add(game);
+                        if (!string.IsNullOrEmpty(titleId))
+                            addedBaseIds.Add(titleId.ToUpperInvariant());
+                    }
+                    else if (File.Exists(game.Path))
+                    {
+                        string destFile = Path.Combine(installPath, Path.GetFileName(game.Path));
+                        if (File.Exists(destFile))
+                            continue;
+                        toCopy.Add(game);
+                    }
+                }
+
+                // 需占用空间：只统计本次将要拷贝的部分（已存在于 install 的文件夹不计入）
+                long sizeToCopy = 0;
+                foreach (var game in toCopy)
+                {
+                    if (Directory.Exists(game.Path))
+                    {
+                        var contentFolders = GetWiiUGameContentFolders(game.Path);
+                        var toCopyFolders = contentFolders
+                            .Where(f => !Directory.Exists(Path.Combine(installPath, Path.GetFileName(f.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)))))
+                            .ToList();
+                        foreach (var f in toCopyFolders)
+                            sizeToCopy += GetDirectorySize(f);
+                    }
+                    else if (File.Exists(game.Path))
+                    {
+                        try { sizeToCopy += new FileInfo(game.Path).Length; }
+                        catch { }
+                    }
+                }
+
+                long freeSpace = 0;
+                try
+                {
+                    string driveRoot = Path.GetPathRoot(root);
+                    if (!string.IsNullOrEmpty(driveRoot))
+                    {
+                        var di = new DriveInfo(driveRoot);
+                        if (di.IsReady)
+                            freeSpace = di.TotalFreeSpace;
+                    }
+                }
+                catch { }
+
+                string sizeStr = FormatSize(sizeToCopy);
+                string freeStr = FormatSize(freeSpace);
+                int skipCount = selected.Count - toCopy.Count;
+                string msg = $"选中 {selected.Count} 个游戏，已存在跳过 {skipCount} 个，待拷贝 {toCopy.Count} 个，需占用 {sizeStr}。\n目标分区可用空间：{freeStr}。";
+                if (toCopy.Count == 0)
+                {
+                    MessageBox.Show("所选游戏在目标 install 中均已存在，无需拷贝。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+                if (freeSpace > 0 && sizeToCopy > freeSpace)
+                {
+                    MessageBox.Show(msg + "\n\n空间不足，无法拷贝。请选择其他分区或取消部分勾选。", "空间不足", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+                if (MessageBox.Show(msg + "\n\n确定开始拷贝？", "确认拷贝", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+                    return;
+
+                if (!Directory.Exists(installPath))
+                    Directory.CreateDirectory(installPath);
+
+                int copied = 0;
+                int failed = 0;
+                IntPtr hwndWiiU = new WindowInteropHelper(this).Handle;
+                foreach (var game in toCopy)
+                {
+                    try
+                    {
+                        if (Directory.Exists(game.Path))
+                        {
+                            // 同一游戏可能包含本体 + DLC + 升级档；只拷贝 install 中尚不存在的部分，已存在的忽略（补全逻辑）
+                            List<string> contentFolders = GetWiiUGameContentFolders(game.Path);
+                            var toCopyFolders = contentFolders
+                                .Where(f => !Directory.Exists(Path.Combine(installPath, Path.GetFileName(f.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)))))
+                                .ToList();
+                            if (toCopyFolders.Count == 0)
+                                continue; // 已全部存在，无需拷贝
+                            if (ShellCopyWithProgress(toCopyFolders, installPath, hwndWiiU))
+                                copied++;
+                            else
+                                failed++;
+                        }
+                        else if (File.Exists(game.Path))
+                        {
+                            string destFile = Path.Combine(installPath, Path.GetFileName(game.Path));
+                            if (File.Exists(destFile))
+                            {
+                                failed++;
+                                continue;
+                            }
+                            if (ShellCopyWithProgress(new List<string> { game.Path }, installPath, hwndWiiU))
+                                copied++;
+                            else
+                                failed++;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        failed++;
+                        System.Diagnostics.Debug.WriteLine($"WiiU copy failed: {game.Path} - {ex.Message}");
+                    }
+                }
+
+                string summary = $"拷贝完成：成功 {copied} 个，失败 {failed} 个。";
+                MessageBox.Show(summary, "拷贝完成", MessageBoxButton.OK, copied > 0 ? MessageBoxImage.Information : MessageBoxImage.Warning);
+            }
+        }
+
+        private static string GetTitleIdFromGamePath(string folderPath)
+        {
+            if (string.IsNullOrEmpty(folderPath) || !Directory.Exists(folderPath)) return null;
+            string tmd = Path.Combine(folderPath, "title.tmd");
+            if (File.Exists(tmd) && WiiUTitleTmdReader.TryReadTitleId(tmd, out string id))
+                return id;
+            tmd = Path.Combine(folderPath, "meta", "title.tmd");
+            if (File.Exists(tmd) && WiiUTitleTmdReader.TryReadTitleId(tmd, out id))
+                return id;
+            return null;
+        }
+
+        /// <summary>收集同一游戏的本体 + DLC + 升级档文件夹（与扫描时分组规则一致：相同后 8 位 Title ID）。</summary>
+        /// <param name="baseGameFolderPath">本体所在文件夹路径（列表中的 game.Path）</param>
+        /// <returns>包含本体、DLC、升级档的完整文件夹列表，若无法识别则只返回本体路径</returns>
+        private static List<string> GetWiiUGameContentFolders(string baseGameFolderPath)
+        {
+            var result = new List<string>();
+            if (string.IsNullOrEmpty(baseGameFolderPath) || !Directory.Exists(baseGameFolderPath))
+                return result;
+
+            string baseTmd = Path.Combine(baseGameFolderPath, "title.tmd");
+            string metaTmd = Path.Combine(baseGameFolderPath, "meta", "title.tmd");
+            string tmdPath = File.Exists(baseTmd) ? baseTmd : (File.Exists(metaTmd) ? metaTmd : null);
+            if (tmdPath == null || !WiiUTitleTmdReader.TryReadTitleId(tmdPath, out string baseTitleId) || string.IsNullOrEmpty(baseTitleId))
+            {
+                result.Add(baseGameFolderPath);
+                return result;
+            }
+
+            string suffix = WiiUTitleTmdReader.GetGameUniqueSuffix(baseTitleId);
+            if (string.IsNullOrEmpty(suffix))
+            {
+                result.Add(baseGameFolderPath);
+                return result;
+            }
+
+            string parentDir = Path.GetDirectoryName(baseGameFolderPath);
+            if (string.IsNullOrEmpty(parentDir) || !Directory.Exists(parentDir))
+            {
+                result.Add(baseGameFolderPath);
+                return result;
+            }
+
+            try
+            {
+                foreach (string subDir in Directory.GetDirectories(parentDir))
+                {
+                    string titleId = GetTitleIdFromGamePath(subDir);
+                    if (string.IsNullOrEmpty(titleId)) continue;
+                    if (!string.Equals(WiiUTitleTmdReader.GetGameUniqueSuffix(titleId), suffix, StringComparison.OrdinalIgnoreCase))
+                        continue;
+                    var type = WiiUTitleTmdReader.GetContentType(titleId);
+                    if (type != WiiUTitleTmdReader.WiiUContentType.Base &&
+                        type != WiiUTitleTmdReader.WiiUContentType.Dlc &&
+                        type != WiiUTitleTmdReader.WiiUContentType.Update)
+                        continue;
+                    result.Add(subDir);
+                }
+            }
+            catch { /* 无权限等 */ }
+
+            if (result.Count == 0)
+                result.Add(baseGameFolderPath);
+            return result;
+        }
+
+        private static HashSet<string> GetExistingTitleIdsInInstall(string installPath)
+        {
+            var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            if (!Directory.Exists(installPath)) return set;
+            try
+            {
+                foreach (string subDir in Directory.GetDirectories(installPath))
+                {
+                    string id = GetTitleIdFromGamePath(subDir);
+                    if (!string.IsNullOrEmpty(id))
+                        set.Add(id.ToUpperInvariant());
+                }
+            }
+            catch { }
+            return set;
+        }
+
+        #endregion
+
         private void MenuSearchGameVideo_Click(object sender, RoutedEventArgs e)
         {
             var game = dgGames.SelectedItem as GameInfo ?? _scannedGames.FirstOrDefault(g => g.IsSelected);
@@ -1437,10 +2171,16 @@ namespace U_Wii_X_Fusion
 
         private void LoadCoverPath()
         {
-            // 从设置中加载封面路径
             var settings = SettingsManager.GetSettings();
             _coverPath = settings.CoverPath;
-            txtCoverPath.Text = _coverPath;
+            if (txtCoverPath != null) txtCoverPath.Text = _coverPath;
+        }
+
+        private void LoadWiiUCoverPath()
+        {
+            var settings = SettingsManager.GetSettings();
+            _wiiuCoverPath = settings.WiiUCoverPath ?? string.Empty;
+            if (txtWiiUCoverPath != null) txtWiiUCoverPath.Text = _wiiuCoverPath;
         }
 
         /// <summary>更新右侧封面预览（Disc + 3D）。</summary>
@@ -1535,19 +2275,24 @@ namespace U_Wii_X_Fusion
 
         private string TryResolveCoverPath(string gameId, string typeFolder)
         {
-            if (string.IsNullOrEmpty(_coverPath) || string.IsNullOrEmpty(gameId))
+            return TryResolveCoverPath(gameId, typeFolder, _coverPath);
+        }
+
+        private string TryResolveCoverPath(string gameId, string typeFolder, string basePath)
+        {
+            if (string.IsNullOrEmpty(basePath) || string.IsNullOrEmpty(gameId))
                 return null;
 
-            string fileName = gameId + ".png";
-            // 优先小写目录
-            string path = System.IO.Path.Combine(_coverPath, typeFolder.ToLowerInvariant(), fileName);
-            if (File.Exists(path)) return path;
-
-            // 再尝试首字母大写
-            string cap = char.ToUpperInvariant(typeFolder[0]) + typeFolder.Substring(1).ToLowerInvariant();
-            path = System.IO.Path.Combine(_coverPath, cap, fileName);
-            if (File.Exists(path)) return path;
-
+            string[] extensions = { ".png", ".jpg" };
+            foreach (string ext in extensions)
+            {
+                string fileName = gameId + ext;
+                string path = System.IO.Path.Combine(basePath, typeFolder.ToLowerInvariant(), fileName);
+                if (File.Exists(path)) return path;
+                string cap = char.ToUpperInvariant(typeFolder[0]) + typeFolder.Substring(1).ToLowerInvariant();
+                path = System.IO.Path.Combine(basePath, cap, fileName);
+                if (File.Exists(path)) return path;
+            }
             return null;
         }
 
@@ -1584,6 +2329,56 @@ namespace U_Wii_X_Fusion
                 }
             }
         }
+
+        #region Windows 外壳拷贝（显示系统进度窗口）
+
+        private const uint FO_COPY = 0x0002;
+        private const ushort FOF_NOCONFIRMMKDIR = 0x0200;
+
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+        private struct SHFILEOPSTRUCT
+        {
+            public IntPtr hwnd;
+            public uint wFunc;
+            public string pFrom;
+            public string pTo;
+            public ushort fFlags;
+            [MarshalAs(UnmanagedType.Bool)] public bool fAnyOperationsAborted;
+            public IntPtr hNameMappings;
+            public string lpszProgressTitle;
+        }
+
+        [DllImport("shell32.dll", CharSet = CharSet.Unicode, EntryPoint = "SHFileOperationW")]
+        private static extern int SHFileOperation(ref SHFILEOPSTRUCT lpFileOp);
+
+        /// <summary>使用 Windows 外壳拷贝，弹出系统进度窗口。源可为多个文件/文件夹，目标为文件夹。</summary>
+        /// <returns>true 表示成功，false 表示失败或用户取消</returns>
+        private static bool ShellCopyWithProgress(IList<string> sourcePaths, string destFolder, IntPtr hwnd = default(IntPtr))
+        {
+            if (sourcePaths == null || sourcePaths.Count == 0 || string.IsNullOrEmpty(destFolder))
+                return false;
+            destFolder = Path.GetFullPath(destFolder);
+            if (!destFolder.EndsWith(Path.DirectorySeparatorChar.ToString()))
+                destFolder += Path.DirectorySeparatorChar;
+            // pFrom/pTo 要求双空终止：每项用 \0 分隔，末尾 \0\0
+            string pFrom = string.Join("\0", sourcePaths.Where(p => !string.IsNullOrEmpty(p))) + "\0\0";
+            string pTo = destFolder + "\0\0";
+            var op = new SHFILEOPSTRUCT
+            {
+                hwnd = hwnd,
+                wFunc = FO_COPY,
+                pFrom = pFrom,
+                pTo = pTo,
+                fFlags = FOF_NOCONFIRMMKDIR,
+                fAnyOperationsAborted = false,
+                hNameMappings = IntPtr.Zero,
+                lpszProgressTitle = null
+            };
+            int ret = SHFileOperation(ref op);
+            return ret == 0 && !op.fAnyOperationsAborted;
+        }
+
+        #endregion
 
         #endregion
 
@@ -1626,6 +2421,19 @@ namespace U_Wii_X_Fusion
             }
         }
 
+        private void BtnBrowseWiiUCoverPath_Click(object sender, RoutedEventArgs e)
+        {
+            using (var folderBrowser = new System.Windows.Forms.FolderBrowserDialog())
+            {
+                folderBrowser.Description = "选择 Wii U 封面存储路径（不填则使用上方封面路径）";
+                if (folderBrowser.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                {
+                    txtWiiUCoverPath.Text = folderBrowser.SelectedPath;
+                    _wiiuCoverPath = folderBrowser.SelectedPath;
+                }
+            }
+        }
+
         #endregion
 
         #region 设置相关方法
@@ -1646,6 +2454,8 @@ namespace U_Wii_X_Fusion
                 txtDatabasePath.Text = settings.DatabasePath;
                 txtCoverPath.Text = settings.CoverPath;
                 _coverPath = settings.CoverPath;
+                if (txtWiiUCoverPath != null) txtWiiUCoverPath.Text = settings.WiiUCoverPath ?? string.Empty;
+                _wiiuCoverPath = settings.WiiUCoverPath ?? string.Empty;
 
                 // 加载网络设置
                 txtApiKey.Text = settings.ApiKey;
@@ -1672,7 +2482,7 @@ namespace U_Wii_X_Fusion
                     GamePath = txtGamePath.Text,
                     DatabasePath = txtDatabasePath.Text,
                     CoverPath = txtCoverPath.Text,
-                    // LastScanPath 目前不再由界面直接编辑，这里保留为之前的值，避免丢失历史信息
+                    WiiUCoverPath = txtWiiUCoverPath != null ? txtWiiUCoverPath.Text : string.Empty,
                     LastScanPath = SettingsManager.GetSettings().LastScanPath,
 
                     // 保存网络设置
@@ -1682,9 +2492,9 @@ namespace U_Wii_X_Fusion
                 
                 SettingsManager.UpdateSettings(settings);
                 
-                // 更新当前的封面路径
                 _coverPath = settings.CoverPath;
-                
+                _wiiuCoverPath = settings.WiiUCoverPath ?? string.Empty;
+
                 MessageBox.Show("设置保存成功！", "成功", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)

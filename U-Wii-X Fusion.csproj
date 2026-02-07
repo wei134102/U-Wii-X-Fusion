@@ -86,6 +86,10 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="WiiUGameQueryWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="UpdateWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -102,6 +106,10 @@
       <DependentUpon>WiiGameQueryWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="WiiUGameQueryWindow.xaml.cs">
+      <DependentUpon>WiiUGameQueryWindow.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="UpdateWindow.xaml.cs">
       <DependentUpon>UpdateWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -111,6 +119,7 @@
     <Compile Include="Core\GameIdentification\WiiGameIdentifier.cs" />
     <Compile Include="Core\GameIdentification\NgcGameIdentifier.cs" />
     <Compile Include="Core\GameIdentification\WiiUGameIdentifier.cs" />
+    <Compile Include="Core\GameIdentification\WiiUTitleTmdReader.cs" />
     <Compile Include="Core\GameIdentification\Xbox360GameIdentifier.cs" />
     <Compile Include="Core\GameIdentification\DiscHeaderReader.cs" />
     <Compile Include="Core\Interfaces\IGameIdentifier.cs" />
@@ -119,6 +128,9 @@
     <Compile Include="Database\Interfaces\IGameDatabase.cs" />
     <Compile Include="Database\Local\LocalGameDatabase.cs" />
     <Compile Include="Database\Local\WiiGameDatabase.cs" />
+    <Compile Include="Database\Local\WiiUGameDatabase.cs" />
+    <Compile Include="Database\Local\WiiUGamesJsonLookup.cs" />
+    <Compile Include="Database\Local\WiiUTitlesJsonLookup.cs" />
     <Compile Include="Database\DatabaseManager.cs" />
     <!-- DeviceManagement 目录 -->
     <Compile Include="DeviceManagement\Devices\WiiDevice.cs" />
@@ -152,6 +164,18 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Data\gametitle.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Data\wiiutdb.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Data\gametitle_wiiu.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Data\wiiu_games.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Data\wiiu_titles.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

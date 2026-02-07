@@ -15,6 +15,8 @@ namespace U_Wii_X_Fusion.Core.Settings
         public string GamePath { get; set; } = string.Empty;
         public string DatabasePath { get; set; } = string.Empty;
         public string CoverPath { get; set; } = string.Empty;
+        /// <summary>Wii U 封面存储路径（不填则使用 CoverPath）</summary>
+        public string WiiUCoverPath { get; set; } = string.Empty;
         /// <summary>上次扫描的游戏目录（Wii/NGC）</summary>
         public string LastScanPath { get; set; } = string.Empty;
 
