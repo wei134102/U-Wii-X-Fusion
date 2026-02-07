@@ -13,6 +13,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using Microsoft.Win32;
+using U_Wii_X_Fusion.Core;
 using U_Wii_X_Fusion.Core.GameIdentification;
 using U_Wii_X_Fusion.Core.Models;
 using U_Wii_X_Fusion.Core.Settings;
@@ -41,6 +42,7 @@ namespace U_Wii_X_Fusion
         private List<GameInfo> _scannedGames;  // 当前正在显示/操作的 Wii/NGC 游戏列表（引用上述三者之一）
         private string _coverPath;
         private string _wiiuCoverPath;
+        private string _xboxCoverPath;
         private readonly WiiGameIdentifier _wiiIdentifier = new WiiGameIdentifier();
         private readonly NgcGameIdentifier _ngcIdentifier = new NgcGameIdentifier();
         private enum GameListSource { Directory, Disk1, Disk2 }
@@ -81,6 +83,7 @@ namespace U_Wii_X_Fusion
             LoadSettings();
             LoadCoverPath();
             LoadWiiUCoverPath();
+            LoadXboxCoverPath();
             LoadDrives();
             UpdateGameCount(); // 初始化时显示 0
             UpdateWiiListStatus();
@@ -197,6 +200,8 @@ namespace U_Wii_X_Fusion
             btnBrowseCoverPath.Click += BtnBrowseCoverPath_Click;
             if (btnBrowseWiiUCoverPath != null)
                 btnBrowseWiiUCoverPath.Click += BtnBrowseWiiUCoverPath_Click;
+            if (btnBrowseXboxCoverPath != null)
+                btnBrowseXboxCoverPath.Click += BtnBrowseXboxCoverPath_Click;
             btnBrowseGamePath.Click += BtnBrowseGamePath_Click;
             btnBrowseDatabasePath.Click += BtnBrowseDatabasePath_Click;
             btnCheckUpdate.Click += BtnCheckUpdate_Click;
@@ -2471,6 +2476,89 @@ namespace U_Wii_X_Fusion
             catch (Exception ex) { MessageBox.Show("无法打开文件夹：" + ex.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Warning); }
         }
 
+        private void BtnXboxDownloadCover_Click(object sender, RoutedEventArgs e)
+        {
+            DownloadXboxCoversForSelected();
+        }
+
+        private void MenuXboxDownloadCover_Click(object sender, RoutedEventArgs e)
+        {
+            DownloadXboxCoversForSelected();
+        }
+
+        private async void DownloadXboxCoversForSelected()
+        {
+            string basePath = !string.IsNullOrEmpty(_xboxCoverPath) ? _xboxCoverPath : _coverPath;
+            if (string.IsNullOrEmpty(basePath) || !Directory.Exists(basePath))
+            {
+                MessageBox.Show("请先在设置中设置 Xbox 360 封面路径或通用封面存储路径。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+            var toDownload = _xboxGames.Where(g => g.IsSelected).ToList();
+            if (toDownload.Count == 0)
+            {
+                var game = dgGamesXbox?.SelectedItem as GameInfo;
+                if (game != null) toDownload.Add(game);
+            }
+            if (toDownload.Count == 0)
+            {
+                MessageBox.Show("请先选中或勾选要下载封面的游戏。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+            int total = toDownload.Count;
+            int ok = 0, fail = 0;
+            if (progressXboxCover != null) { progressXboxCover.Visibility = Visibility.Visible; progressXboxCover.Value = 0; progressXboxCover.Maximum = total; }
+            SetXboxStatus($"正在下载封面 0/{total}...");
+            try
+            {
+                for (int i = 0; i < toDownload.Count; i++)
+                {
+                    var game = toDownload[i];
+                    int current = i + 1;
+                    bool success = false;
+                    await System.Threading.Tasks.Task.Run(() =>
+                    {
+                        if (string.IsNullOrEmpty(game.GameId)) return;
+                        string xboxDir = Path.Combine(basePath, "xbox");
+                        string savePath = Path.Combine(xboxDir, game.GameId + ".png");
+                        success = Xbox360CoverDownloader.DownloadCover(game.GameId, savePath);
+                    });
+                    if (success) ok++; else if (!string.IsNullOrEmpty(game.GameId)) fail++;
+                    Dispatcher.Invoke(() =>
+                    {
+                        if (progressXboxCover != null) progressXboxCover.Value = current;
+                        SetXboxStatus($"正在下载封面 {current}/{total}（成功 {ok}，失败 {fail}）");
+                    });
+                }
+                await Dispatcher.InvokeAsync(() =>
+                {
+                    if (progressXboxCover != null) { progressXboxCover.Visibility = Visibility.Collapsed; progressXboxCover.Value = 0; progressXboxCover.Maximum = 100; }
+                    if (ok > 0)
+                    {
+                        var sel = dgGamesXbox?.SelectedItem as GameInfo;
+                        UpdateXboxCover(sel);
+                    }
+                    SetXboxStatus(dgGamesXbox?.SelectedItem is GameInfo g ? $"{g.Title ?? g.GameId}" : "选中游戏显示详情");
+                });
+            }
+            catch (Exception ex)
+            {
+                await Dispatcher.InvokeAsync(() =>
+                {
+                    if (progressXboxCover != null) { progressXboxCover.Visibility = Visibility.Collapsed; }
+                    SetXboxStatus("下载出错");
+                });
+                MessageBox.Show($"下载封面时出错：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+            MessageBox.Show($"下载完成：成功 {ok} 个，失败 {fail} 个。", "下载封面", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
+        private void SetXboxStatus(string text)
+        {
+            if (txtXboxStatus != null) txtXboxStatus.Text = text ?? "";
+        }
+
         private void DgGamesXbox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             var game = dgGamesXbox?.SelectedItem as GameInfo;
@@ -2480,7 +2568,21 @@ namespace U_Wii_X_Fusion
                 if (game == null) txtGameInfoXbox.Text = "";
                 else txtGameInfoXbox.Text = $"游戏ID: {game.GameId}\n游戏名称: {game.Title}\n中文名称: {game.ChineseTitle}\n格式: {game.Format}\n大小: {game.FormattedSize}";
             }
+            UpdateXboxCover(game);
             if (txtXboxStatus != null) txtXboxStatus.Text = game != null ? $"{game.Title ?? game.GameId}" : "选中游戏显示详情";
+        }
+
+        private void UpdateXboxCover(GameInfo game)
+        {
+            if (imgCoverXbox == null) return;
+            if (game == null || string.IsNullOrEmpty(game.GameId))
+            {
+                imgCoverXbox.Source = null;
+                return;
+            }
+            string basePath = !string.IsNullOrEmpty(_xboxCoverPath) ? _xboxCoverPath : _coverPath;
+            string coverPath = TryResolveCoverPath(game.GameId, "xbox", basePath);
+            imgCoverXbox.Source = LoadBitmapOrNull(coverPath);
         }
 
         #endregion
@@ -2533,6 +2635,13 @@ namespace U_Wii_X_Fusion
             var settings = SettingsManager.GetSettings();
             _wiiuCoverPath = settings.WiiUCoverPath ?? string.Empty;
             if (txtWiiUCoverPath != null) txtWiiUCoverPath.Text = _wiiuCoverPath;
+        }
+
+        private void LoadXboxCoverPath()
+        {
+            var settings = SettingsManager.GetSettings();
+            _xboxCoverPath = settings.XboxCoverPath ?? string.Empty;
+            if (txtXboxCoverPath != null) txtXboxCoverPath.Text = _xboxCoverPath;
         }
 
         /// <summary>更新右侧封面预览（Disc + 3D）。</summary>
@@ -2786,6 +2895,19 @@ namespace U_Wii_X_Fusion
             }
         }
 
+        private void BtnBrowseXboxCoverPath_Click(object sender, RoutedEventArgs e)
+        {
+            using (var folderBrowser = new System.Windows.Forms.FolderBrowserDialog())
+            {
+                folderBrowser.Description = "选择 Xbox 360 封面存储路径（不填则使用上方封面路径）";
+                if (folderBrowser.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                {
+                    txtXboxCoverPath.Text = folderBrowser.SelectedPath;
+                    _xboxCoverPath = folderBrowser.SelectedPath;
+                }
+            }
+        }
+
         #endregion
 
         #region 设置相关方法
@@ -2808,6 +2930,8 @@ namespace U_Wii_X_Fusion
                 _coverPath = settings.CoverPath;
                 if (txtWiiUCoverPath != null) txtWiiUCoverPath.Text = settings.WiiUCoverPath ?? string.Empty;
                 _wiiuCoverPath = settings.WiiUCoverPath ?? string.Empty;
+                if (txtXboxCoverPath != null) txtXboxCoverPath.Text = settings.XboxCoverPath ?? string.Empty;
+                _xboxCoverPath = settings.XboxCoverPath ?? string.Empty;
 
                 // 加载网络设置
                 txtApiKey.Text = settings.ApiKey;
@@ -2835,6 +2959,7 @@ namespace U_Wii_X_Fusion
                     DatabasePath = txtDatabasePath.Text,
                     CoverPath = txtCoverPath.Text,
                     WiiUCoverPath = txtWiiUCoverPath != null ? txtWiiUCoverPath.Text : string.Empty,
+                    XboxCoverPath = txtXboxCoverPath != null ? txtXboxCoverPath.Text : string.Empty,
                     LastScanPath = SettingsManager.GetSettings().LastScanPath,
 
                     // 保存网络设置
@@ -2846,6 +2971,7 @@ namespace U_Wii_X_Fusion
                 
                 _coverPath = settings.CoverPath;
                 _wiiuCoverPath = settings.WiiUCoverPath ?? string.Empty;
+                _xboxCoverPath = settings.XboxCoverPath ?? string.Empty;
 
                 MessageBox.Show("设置保存成功！", "成功", MessageBoxButton.OK, MessageBoxImage.Information);
             }

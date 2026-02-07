@@ -68,6 +68,11 @@
                                     <TextBox x:Name="txtWiiUCoverPath" Width="300" Margin="0,0,10,0"/>
                                     <Button x:Name="btnBrowseWiiUCoverPath" Content="浏览..."/>
                                 </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
+                                    <TextBlock Text="Xbox 360 封面路径:" Width="120" VerticalAlignment="Center"/>
+                                    <TextBox x:Name="txtXboxCoverPath" Width="300" Margin="0,0,10,0"/>
+                                    <Button x:Name="btnBrowseXboxCoverPath" Content="浏览..."/>
+                                </StackPanel>
                             </StackPanel>
                         </Expander>
                         <Expander Header="网络设置" Margin="0,0,0,10">
@@ -494,6 +499,7 @@
                                         </Button.ContextMenu>
                                     </Button>
                                     <Button x:Name="btnXboxAddToDb" Content="添加到数据库" Width="100" Padding="6,3" Margin="0,0,6,0" ToolTip="将选中游戏添加到 Xbox 360 游戏数据库" Click="BtnXboxAddToDb_Click"/>
+                                    <Button x:Name="btnXboxDownloadCover" Content="下载封面" Width="80" Padding="6,3" Margin="0,0,6,0" ToolTip="为选中游戏下载封面（需先设置封面存储路径）" Click="BtnXboxDownloadCover_Click"/>
                                 </StackPanel>
                             </Grid>
 
@@ -510,6 +516,7 @@
                                     <DataGrid.ContextMenu>
                                         <ContextMenu>
                                             <MenuItem Header="添加到XBOX360游戏数据库" Click="MenuXboxAddToDb_Click"/>
+                                            <MenuItem Header="下载封面" Click="MenuXboxDownloadCover_Click"/>
                                             <MenuItem Header="打开游戏位置" Click="MenuXboxOpenGameLocation_Click"/>
                                         </ContextMenu>
                                     </DataGrid.ContextMenu>
@@ -570,7 +577,10 @@
                                     </Border>
                                 </GroupBox>
                                 <GroupBox Header="状态" Grid.Row="1" FontSize="12" Margin="0,4,0,0">
-                                    <TextBlock x:Name="txtXboxStatus" Text="选中游戏显示详情" FontSize="12" Foreground="#666" TextWrapping="Wrap" Margin="4"/>
+                                    <StackPanel>
+                                        <TextBlock x:Name="txtXboxStatus" Text="选中游戏显示详情" FontSize="12" Foreground="#666" TextWrapping="Wrap" Margin="4,4,4,4"/>
+                                        <ProgressBar x:Name="progressXboxCover" Height="8" Margin="4,0,4,4" Minimum="0" Maximum="100" Value="0" Visibility="Collapsed"/>
+                                    </StackPanel>
                                 </GroupBox>
                             </Grid>
                         </Border>

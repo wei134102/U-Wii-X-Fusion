@@ -142,6 +142,7 @@
     <Compile Include="Core\GameIdentification\DiscHeaderReader.cs" />
     <Compile Include="Core\Interfaces\IGameIdentifier.cs" />
     <Compile Include="Core\Models\GameInfo.cs" />
+    <Compile Include="Core\Xbox360CoverDownloader.cs" />
     <!-- Database 目录 -->
     <Compile Include="Database\Interfaces\IGameDatabase.cs" />
     <Compile Include="Database\Local\LocalGameDatabase.cs" />
