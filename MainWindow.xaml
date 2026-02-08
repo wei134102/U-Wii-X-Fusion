@@ -500,6 +500,7 @@
                                     </Button>
                                     <Button x:Name="btnXboxAddToDb" Content="添加到数据库" Width="100" Padding="6,3" Margin="0,0,6,0" ToolTip="将选中游戏添加到 Xbox 360 游戏数据库" Click="BtnXboxAddToDb_Click"/>
                                     <Button x:Name="btnXboxDownloadCover" Content="下载封面" Width="80" Padding="6,3" Margin="0,0,6,0" ToolTip="为选中游戏下载封面（需先设置封面存储路径）" Click="BtnXboxDownloadCover_Click"/>
+                                    <Button x:Name="btnXboxFtp" Content="FTP" Width="55" Padding="6,3" Margin="0,0,6,0" ToolTip="连接 Xbox 360（Aurora）FTP：测试连接、下载 Content.db、浏览 GameData" Click="BtnXboxFtp_Click"/>
                                 </StackPanel>
                             </Grid>
 

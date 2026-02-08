@@ -61,13 +61,15 @@ namespace U_Wii_X_Fusion.Core.GameIdentification
             if (File.Exists(Path.Combine(dirPath, "$T"))) return true;
             var contentDir = Path.Combine(dirPath, "Content");
             if (Directory.Exists(contentDir)) return true;
-            // GOD: 子目录名为 8 位 hex (Content/0...0/TitleID)
+            // GOD: 仅当「恰好一个」直接子目录为 8 位 hex 时才视为游戏目录（如 GameName\4C5307DE）；
+            // 若多个直接子目录都是 8 位 hex（如 games\315A07D1, games\354807D5...）则为容器目录，不视为游戏，继续递归扫描
             try
             {
-                foreach (var sub in Directory.GetDirectories(dirPath))
-                {
-                    if (TitleIdRegex.IsMatch(Path.GetFileName(sub) ?? "")) return true;
-                }
+                var hexSubdirs = Directory.GetDirectories(dirPath)
+                    .Where(d => TitleIdRegex.IsMatch(Path.GetFileName(d) ?? ""))
+                    .Take(2)
+                    .ToList();
+                if (hexSubdirs.Count == 1) return true;
             }
             catch { }
             return false;

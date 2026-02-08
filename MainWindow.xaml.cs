@@ -2435,6 +2435,12 @@ namespace U_Wii_X_Fusion
             RestoreMainWindowFromTray();
         }
 
+        private void BtnXboxFtp_Click(object sender, RoutedEventArgs e)
+        {
+            var ftpWindow = new Xbox360FtpWindow { Owner = this };
+            ftpWindow.ShowDialog();
+        }
+
         private void BtnXboxAddToDb_Click(object sender, RoutedEventArgs e)
         {
             AddSelectedXboxGamesToDatabase();
