@@ -24,6 +24,15 @@ namespace U_Wii_X_Fusion.Core.Settings
         /// <summary>Xbox 360 游戏目录（如 E:\roms\xbox360\X360K）</summary>
         public string LastXboxScanPath { get; set; } = @"E:\roms\xbox360\X360K";
 
+        /// <summary>WII 插件编辑器：上次使用的插件目录</summary>
+        public string LastPluginEditorPluginsDir { get; set; } = string.Empty;
+        /// <summary>WII 插件编辑器：上次使用的 ROM 目录</summary>
+        public string LastPluginEditorRomsDir { get; set; } = string.Empty;
+        /// <summary>WII 插件编辑器：上次使用的图片目录</summary>
+        public string LastPluginEditorImagesDir { get; set; } = string.Empty;
+        /// <summary>WII 插件编辑器：上次使用的自定义标题文件路径</summary>
+        public string LastPluginEditorTitlesFile { get; set; } = string.Empty;
+
         // 网络设置
         public string ApiKey { get; set; } = string.Empty;
         public bool EnableProxy { get; set; } = false;

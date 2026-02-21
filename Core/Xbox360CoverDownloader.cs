@@ -63,7 +63,8 @@ namespace U_Wii_X_Fusion.Core
                     }
                 }
                 var first = covers[0] as Dictionary<string, object>;
-                return first?.TryGetValue("CoverID", out var id) == true ? id?.ToString() : null;
+                if (first != null && first.TryGetValue("CoverID", out var id)) return id?.ToString();
+                return null;
             }
         }
 

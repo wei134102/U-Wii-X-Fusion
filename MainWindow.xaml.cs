@@ -62,6 +62,7 @@ namespace U_Wii_X_Fusion
         private readonly Xbox360GameIdentifier _xboxIdentifier = new Xbox360GameIdentifier();
 
         private System.Windows.Forms.NotifyIcon _notifyIcon;
+        private WiiPluginEditorWindow _wiiPluginEditorWindow;
 
         public MainWindow()
         {
@@ -205,6 +206,21 @@ namespace U_Wii_X_Fusion
             btnBrowseGamePath.Click += BtnBrowseGamePath_Click;
             btnBrowseDatabasePath.Click += BtnBrowseDatabasePath_Click;
             btnCheckUpdate.Click += BtnCheckUpdate_Click;
+            // btnWiiPluginEditor 已在 XAML 中指定 Click="BtnWiiPluginEditor_Click"，此处不再重复订阅，否则会弹出两个窗口
+        }
+
+        private void BtnWiiPluginEditor_Click(object sender, RoutedEventArgs e)
+        {
+            Hide();
+            _wiiPluginEditorWindow = new WiiPluginEditorWindow();
+            _wiiPluginEditorWindow.Closed += (s, _) =>
+            {
+                Show();
+                WindowState = WindowState.Normal;
+                Activate();
+                _wiiPluginEditorWindow = null;
+            };
+            _wiiPluginEditorWindow.Show();
         }
 
         private void BtnCheckUpdate_Click(object sender, RoutedEventArgs e)

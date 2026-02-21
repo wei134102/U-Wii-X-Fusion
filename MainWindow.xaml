@@ -185,6 +185,7 @@
                                     </Button.ContextMenu>
                                 </Button>
                                 <Button x:Name="btnRenameGames" Content="游戏重命名" Padding="8,4" Margin="0,0,0,0" ToolTip="将选中游戏按“中文名 [ID]\\ID.扩展名”规则重命名并整理到文件夹" Click="BtnRenameGames_Click"/>
+                                <Button x:Name="btnWiiPluginEditor" Content="WII插件编辑器" Width="110" Padding="6,3" Margin="8,0,0,0" ToolTip="打开 Wii 插件配置管理器" Click="BtnWiiPluginEditor_Click"/>
                             </StackPanel>
                             </Grid>
 

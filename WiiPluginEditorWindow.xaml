@@ -1,0 +1,132 @@
+<Window x:Class="U_Wii_X_Fusion.WiiPluginEditorWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="WII 插件编辑器" Height="900" Width="1200"
+        WindowStartupLocation="CenterScreen"
+        Background="#F5F5F5">
+    <Window.Resources>
+        <ContextMenu x:Key="PluginContextMenu">
+            <MenuItem Header="编辑插件(打开 ini)" Click="MenuEditPlugin_Click"/>
+            <MenuItem Header="删除插件(移动到 bak)" Click="MenuDeletePlugin_Click"/>
+        </ContextMenu>
+        <ContextMenu x:Key="RomContextMenu">
+            <MenuItem Header="打开 ROM 所在文件夹" Click="MenuOpenRomFolder_Click"/>
+            <MenuItem Header="添加缺失封面" Click="MenuAddMissingCover_Click"/>
+        </ContextMenu>
+        <ContextMenu x:Key="ImageContextMenu">
+            <MenuItem Header="打开图片所在文件夹" Click="MenuOpenImageFolder_Click"/>
+            <MenuItem Header="调整图片大小" Click="MenuResizeImage_Click"/>
+            <MenuItem Header="重命名图片" Click="MenuRenameImage_Click"/>
+            <MenuItem Header="转换格式" Click="MenuConvertImage_Click"/>
+        </ContextMenu>
+    </Window.Resources>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- 工具栏 -->
+        <Border Grid.Row="0" Background="#EEE" Padding="6,4" BorderBrush="#DDD" BorderThickness="0,0,0,1">
+            <StackPanel Orientation="Horizontal">
+                <Button x:Name="btnPin" Content="📌 置顶" Width="60" Padding="5,3" Margin="0,0,6,0" Click="BtnPin_Click" ToolTip="切换窗口置顶"/>
+                <Button x:Name="btnPluginsDir" Content="插件目录" Width="80" Padding="5,3" Margin="0,0,6,0" Click="BtnPluginsDir_Click" ToolTip="选择插件配置目录"/>
+                <Button x:Name="btnImagesDir" Content="图片目录" Width="80" Padding="5,3" Margin="0,0,6,0" Click="BtnImagesDir_Click" ToolTip="选择图片目录"/>
+                <Button x:Name="btnTitlesFile" Content="标题文件" Width="80" Padding="5,3" Margin="0,0,6,0" Click="BtnTitlesFile_Click" ToolTip="选择自定义标题文件"/>
+                <Button x:Name="btnRomsDir" Content="ROM目录" Width="80" Padding="5,3" Margin="0,0,6,0" Click="BtnRomsDir_Click" ToolTip="选择ROM目录"/>
+                <Separator Margin="8,0"/>
+                <Button x:Name="btnScanPlugins" Content="🔄 扫描插件" Width="90" Padding="5,3" Margin="0,0,6,0" Click="BtnScanPlugins_Click" ToolTip="扫描并加载插件"/>
+                <CheckBox x:Name="chkSubdirs" Content="扫描子目录" IsChecked="True" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                <Button x:Name="btnOpenTitles" Content="打开自定义标题" Width="110" Padding="5,3" Margin="0,0,6,0" Click="BtnOpenTitles_Click" ToolTip="用系统默认程序打开标题文件"/>
+                <Button x:Name="btnMameToTitles" Content="MAME列表→标题" Width="110" Padding="5,3" Margin="0,0,6,0" Click="BtnMameToTitles_Click" ToolTip="从 mame_cn.lst 生成标题"/>
+                <Button x:Name="btnLang" Content="🌐 语言" Width="60" Padding="5,3" Margin="0,0,6,0" Click="BtnLang_Click"/>
+                <CheckBox x:Name="chkLog" Content="日志" VerticalAlignment="Center" Margin="0,0,0,0"/>
+            </StackPanel>
+        </Border>
+
+        <!-- 三栏：插件列表 | ROM表格 | 图片表格+预览 -->
+        <Grid Grid.Row="1" Margin="8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="300"/>
+                <ColumnDefinition Width="400"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- 左侧：插件列表 -->
+            <Border Grid.Column="0" Background="White" BorderBrush="#E0E0E0" BorderThickness="1" CornerRadius="4" Padding="4" Margin="0,0,4,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Grid.Row="0" Text="插件列表" FontWeight="Bold" Margin="0,0,0,4"/>
+                    <ListBox x:Name="listPlugins" Grid.Row="1" SelectionChanged="ListPlugins_SelectionChanged"
+                             ContextMenu="{StaticResource PluginContextMenu}"
+                             DisplayMemberPath="DisplayName"/>
+                </Grid>
+            </Border>
+
+            <!-- 中间：ROM 列表 -->
+            <Border Grid.Column="1" Background="White" BorderBrush="#E0E0E0" BorderThickness="1" CornerRadius="4" Padding="4" Margin="4,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,4">
+                        <TextBlock Text="ROM列表" FontWeight="Bold"/>
+                        <TextBlock x:Name="txtRomCount" Text="(0)" Margin="8,0,0,0" Foreground="#666"/>
+                        <TextBlock x:Name="txtMissingCover" Text="" Margin="12,0,0,0" Foreground="Red" FontWeight="SemiBold"/>
+                    </StackPanel>
+                    <DataGrid x:Name="dgRoms" Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="False"
+                              CanUserAddRows="False" CanUserDeleteRows="False" SelectionMode="Single"
+                              ContextMenu="{StaticResource RomContextMenu}"
+                              CellEditEnding="DgRoms_CellEditEnding">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="文件名" Binding="{Binding FileName}" Width="*" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="显示名称" Binding="{Binding DisplayName}" Width="*"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </Border>
+
+            <!-- 右侧：图片列表 + 预览 -->
+            <Border Grid.Column="2" Background="White" BorderBrush="#E0E0E0" BorderThickness="1" CornerRadius="4" Padding="4" Margin="4,0,0,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="2*"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,4">
+                        <TextBlock Text="图片列表" FontWeight="Bold"/>
+                        <TextBlock x:Name="txtImageCount" Text="(0)" Margin="8,0,0,0" Foreground="#666"/>
+                    </StackPanel>
+                    <DataGrid x:Name="dgImages" Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True"
+                              CanUserAddRows="False" SelectionMode="Single"
+                              ContextMenu="{StaticResource ImageContextMenu}"
+                              SelectionChanged="DgImages_SelectionChanged">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="文件名" Binding="{Binding FileName}" Width="*"/>
+                            <DataGridTextColumn Header="分辨率" Binding="{Binding Resolution}" Width="80"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <Border Grid.Row="2" BorderBrush="#E0E0E0" BorderThickness="0,1,0,0" Margin="0,4,0,0">
+                        <Image x:Name="imgPreview" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- 底部路径标签 -->
+        <Border Grid.Row="2" Background="#EEE" Padding="8,6" BorderBrush="#DDD" BorderThickness="0,1,0,0">
+            <StackPanel>
+                <TextBlock x:Name="txtPluginsPath" Text="插件目录: 未选择" FontSize="11" Foreground="#333"/>
+                <TextBlock x:Name="txtRomsPath" Text="ROM目录: 未选择" FontSize="11" Foreground="#333"/>
+                <TextBlock x:Name="txtImagesPath" Text="图片目录: 未选择" FontSize="11" Foreground="#333"/>
+                <TextBlock x:Name="txtTitlesPath" Text="自定义标题文件: 未选择" FontSize="11" Foreground="#333"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>
