@@ -10,6 +10,8 @@ namespace U_Wii_X_Fusion.Core.Settings
         public bool AutoUpdate { get; set; } = true;
         public bool EnableLogging { get; set; } = false;
         public bool CheckDevices { get; set; } = true;
+        /// <summary>使用英文界面（false=中文，true=英文）</summary>
+        public bool UseEnglish { get; set; } = false;
 
         // 路径设置
         public string GamePath { get; set; } = string.Empty;

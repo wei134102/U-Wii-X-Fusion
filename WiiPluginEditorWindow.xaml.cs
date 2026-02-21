@@ -48,19 +48,94 @@ namespace U_Wii_X_Fusion
                     SaveCustomTitles();
             };
             LoadLastPaths();
+            _languageZh = !AppLanguage.IsEnglish;
+            ApplyLanguage();
+        }
+
+        /// <summary>由主窗口在切换全局语言时调用，使插件编辑器与主界面语言一致</summary>
+        public void ApplyLanguageFromGlobal()
+        {
+            _languageZh = !AppLanguage.IsEnglish;
+            ApplyLanguage();
+        }
+
+        private string L(string zh, string en) => _languageZh ? zh : en;
+
+        private void ApplyLanguage()
+        {
+            // 窗口标题
+            Title = L("WII 插件编辑器", "WII Plugin Editor");
+
+            // 工具栏按钮与提示
+            btnPin.Content = L("📌 置顶", "📌 Pin");
+            btnPin.ToolTip = L("切换窗口置顶", "Toggle window always on top");
+
+            btnPluginsDir.Content = L("插件目录", "Plugins dir");
+            btnPluginsDir.ToolTip = L("选择插件配置目录", "Select plugin configuration directory");
+
+            btnImagesDir.Content = L("图片目录", "Images dir");
+            btnImagesDir.ToolTip = L("选择图片目录", "Select images directory");
+
+            btnTitlesFile.Content = L("标题文件", "Title file");
+            btnTitlesFile.ToolTip = L("选择自定义标题文件", "Select custom titles file");
+
+            btnRomsDir.Content = L("ROM目录", "ROM dir");
+            btnRomsDir.ToolTip = L("选择ROM目录", "Select ROM directory");
+
+            btnScanPlugins.Content = L("🔄 扫描插件", "🔄 Scan plugins");
+            btnScanPlugins.ToolTip = L("扫描并加载插件", "Scan and load plugin ini files");
+
+            chkSubdirs.Content = L("扫描子目录", "Scan subfolders");
+            btnOpenTitles.Content = L("打开自定义标题", "Open custom titles");
+            btnOpenTitles.ToolTip = L("用系统默认程序打开标题文件", "Open custom titles file with system editor");
+
+            btnMameToTitles.Content = L("MAME列表→标题", "MAME list → titles");
+            btnMameToTitles.ToolTip = L("从 mame_cn.lst 生成标题", "Generate titles from mame_cn.lst");
+
+            btnLang.Content = L("🌐 语言", "🌐 Language");
+            chkLog.Content = L("日志", "Log");
+
+            // 分栏标题
+            lblPluginList.Text = L("插件列表", "Plugin list");
+            lblRomList.Text = L("ROM列表", "ROM list");
+            lblImageList.Text = L("图片列表", "Image list");
+
+            // 表头
+            colRomFileName.Header = L("文件名", "File Name");
+            colRomDisplayName.Header = L("显示名称", "Display Name");
+            colImageFileName.Header = L("文件名", "File Name");
+            colImageResolution.Header = L("分辨率", "Resolution");
+
+            // 路径标签
+            txtPluginsPath.Text = string.IsNullOrEmpty(_pluginsDir)
+                ? L("插件目录: 未选择", "Plugins dir: Not selected")
+                : L("插件目录: " + _pluginsDir, "Plugins dir: " + _pluginsDir);
+            txtRomsPath.Text = string.IsNullOrEmpty(_romsDir)
+                ? L("ROM目录: 未选择", "ROM dir: Not selected")
+                : L("ROM目录: " + _romsDir, "ROM dir: " + _romsDir);
+            txtImagesPath.Text = string.IsNullOrEmpty(_imagesDir)
+                ? L("图片目录: 未选择", "Images dir: Not selected")
+                : L("图片目录: " + _imagesDir, "Images dir: " + _imagesDir);
+            txtTitlesPath.Text = string.IsNullOrEmpty(_customTitlesFile)
+                ? L("自定义标题文件: 未选择", "Titles file: Not selected")
+                : L("自定义标题文件: " + _customTitlesFile, "Titles file: " + _customTitlesFile);
+
+            // 缺封面统计文案
+            int missing = _romRows.Count(r => !r.HasImage);
+            txtMissingCover.Text = missing > 0 ? L("  缺封面: " + missing, "  Missing covers: " + missing) : "";
         }
 
         private void LoadLastPaths()
         {
             var s = SettingsManager.GetSettings();
             if (!string.IsNullOrEmpty(s.LastPluginEditorPluginsDir) && Directory.Exists(s.LastPluginEditorPluginsDir))
-            { _pluginsDir = s.LastPluginEditorPluginsDir; txtPluginsPath.Text = "插件目录: " + _pluginsDir; }
+            { _pluginsDir = s.LastPluginEditorPluginsDir; }
             if (!string.IsNullOrEmpty(s.LastPluginEditorRomsDir) && Directory.Exists(s.LastPluginEditorRomsDir))
-            { _romsDir = s.LastPluginEditorRomsDir; txtRomsPath.Text = "ROM目录: " + _romsDir; }
+            { _romsDir = s.LastPluginEditorRomsDir; }
             if (!string.IsNullOrEmpty(s.LastPluginEditorImagesDir) && Directory.Exists(s.LastPluginEditorImagesDir))
-            { _imagesDir = s.LastPluginEditorImagesDir; txtImagesPath.Text = "图片目录: " + _imagesDir; }
+            { _imagesDir = s.LastPluginEditorImagesDir; }
             if (!string.IsNullOrEmpty(s.LastPluginEditorTitlesFile) && File.Exists(s.LastPluginEditorTitlesFile))
-            { _customTitlesFile = s.LastPluginEditorTitlesFile; txtTitlesPath.Text = "自定义标题文件: " + _customTitlesFile; }
+            { _customTitlesFile = s.LastPluginEditorTitlesFile; }
         }
 
         private void SaveLastPaths()
@@ -90,13 +165,24 @@ namespace U_Wii_X_Fusion
         private void BtnPluginsDir_Click(object sender, RoutedEventArgs e)
         {
             var dir = VistaFolderPicker.PickFolder("选择插件目录", _pluginsDir, this);
-            if (dir != null) { _pluginsDir = dir; txtPluginsPath.Text = "插件目录: " + dir; Log("设置插件目录: " + dir); SaveLastPaths(); }
+            if (dir != null)
+            {
+                _pluginsDir = dir;
+                Log("设置插件目录: " + dir);
+                SaveLastPaths();
+                ApplyLanguage();
+            }
         }
 
         private void BtnImagesDir_Click(object sender, RoutedEventArgs e)
         {
             var dir = VistaFolderPicker.PickFolder("选择图片目录", _imagesDir, this);
-            if (dir != null) { _imagesDir = dir; txtImagesPath.Text = "图片目录: " + dir; SaveLastPaths(); }
+            if (dir != null)
+            {
+                _imagesDir = dir;
+                SaveLastPaths();
+                ApplyLanguage();
+            }
         }
 
         private void BtnTitlesFile_Click(object sender, RoutedEventArgs e)
@@ -106,13 +192,23 @@ namespace U_Wii_X_Fusion
                 : (!string.IsNullOrEmpty(_pluginsDir) && Directory.Exists(_pluginsDir) ? _pluginsDir : null);
             var dlg = new OpenFileDialog { Filter = "INI 文件 (*.ini)|*.ini|所有文件|*.*" };
             if (!string.IsNullOrEmpty(initialDir)) dlg.InitialDirectory = initialDir;
-            if (dlg.ShowDialog() == true) { _customTitlesFile = dlg.FileName; txtTitlesPath.Text = "自定义标题文件: " + _customTitlesFile; SaveLastPaths(); }
+            if (dlg.ShowDialog() == true)
+            {
+                _customTitlesFile = dlg.FileName;
+                SaveLastPaths();
+                ApplyLanguage();
+            }
         }
 
         private void BtnRomsDir_Click(object sender, RoutedEventArgs e)
         {
             var dir = VistaFolderPicker.PickFolder("选择ROM目录", _romsDir, this);
-            if (dir != null) { _romsDir = dir; txtRomsPath.Text = "ROM目录: " + dir; SaveLastPaths(); }
+            if (dir != null)
+            {
+                _romsDir = dir;
+                SaveLastPaths();
+                ApplyLanguage();
+            }
         }
 
         private void BtnScanPlugins_Click(object sender, RoutedEventArgs e)
@@ -240,7 +336,7 @@ namespace U_Wii_X_Fusion
             }
             txtRomCount.Text = "(" + _romRows.Count + ")";
             int missing = _romRows.Count(r => !r.HasImage);
-            txtMissingCover.Text = missing > 0 ? "  缺封面: " + missing : "";
+            txtMissingCover.Text = missing > 0 ? L("  缺封面: " + missing, "  Missing covers: " + missing) : "";
         }
 
         private void LoadImages()
@@ -524,8 +620,10 @@ namespace U_Wii_X_Fusion
                 LoadImages();
                 dgRoms.Items.Refresh();
                 int missing = _romRows.Count(r => !r.HasImage);
-                txtMissingCover.Text = missing > 0 ? "  缺封面: " + missing : "";
-                MessageBox.Show("已添加 " + added + " 张封面。", "完成", MessageBoxButton.OK, MessageBoxImage.Information);
+                txtMissingCover.Text = missing > 0 ? L("  缺封面: " + missing, "  Missing covers: " + missing) : "";
+                MessageBox.Show(L("已添加 " + added + " 张封面。", "Added " + added + " cover(s)."),
+                                L("完成", "Done"),
+                                MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }
 
@@ -641,7 +739,10 @@ namespace U_Wii_X_Fusion
         private void BtnLang_Click(object sender, RoutedEventArgs e)
         {
             _languageZh = !_languageZh;
-            Title = _languageZh ? "WII 插件编辑器" : "WII Plugin Editor";
+            var settings = SettingsManager.GetSettings();
+            settings.UseEnglish = !_languageZh;
+            SettingsManager.UpdateSettings(settings);
+            ApplyLanguage();
         }
 
         private void Log(string message)

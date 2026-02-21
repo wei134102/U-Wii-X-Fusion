@@ -82,6 +82,7 @@ namespace U_Wii_X_Fusion
             SetupEventHandlers();
             Closed += MainWindow_Closed;
             LoadSettings();
+            ApplyLanguage();
             LoadCoverPath();
             LoadWiiUCoverPath();
             LoadXboxCoverPath();
@@ -2480,9 +2481,9 @@ namespace U_Wii_X_Fusion
             string chineseName = game.ChineseTitle ?? "";
             var dlg = new Xbox360AddToDbDialog(titleId, name, chineseName) { Owner = this };
             if (dlg.ShowDialog() != true) return;
-            _xboxTitlesDatabase?.AddOrUpdate(dlg.TitleId, dlg.Name, dlg.ChineseName);
+            _xboxTitlesDatabase?.AddOrUpdate(dlg.TitleId, dlg.GameName, dlg.ChineseName);
             if (!string.IsNullOrEmpty(dlg.ChineseName)) game.ChineseTitle = dlg.ChineseName;
-            if (!string.IsNullOrEmpty(dlg.Name)) game.Title = dlg.Name;
+            if (!string.IsNullOrEmpty(dlg.GameName)) game.Title = dlg.GameName;
             if (!string.IsNullOrEmpty(dlg.TitleId)) game.GameId = dlg.TitleId;
             dgGamesXbox?.Items.Refresh();
             MessageBox.Show("已添加到 Xbox 360 游戏数据库。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -2969,12 +2970,14 @@ namespace U_Wii_X_Fusion
         {
             try
             {
+                var current = SettingsManager.GetSettings();
                 var settings = new AppSettings
                 {
                     // 保存通用设置
                     AutoUpdate = chkAutoUpdate.IsChecked ?? false,
                     EnableLogging = chkEnableLogging.IsChecked ?? false,
                     CheckDevices = chkCheckDevices.IsChecked ?? false,
+                    UseEnglish = current.UseEnglish,
 
                     // 保存路径设置
                     GamePath = txtGamePath.Text,
@@ -2982,25 +2985,171 @@ namespace U_Wii_X_Fusion
                     CoverPath = txtCoverPath.Text,
                     WiiUCoverPath = txtWiiUCoverPath != null ? txtWiiUCoverPath.Text : string.Empty,
                     XboxCoverPath = txtXboxCoverPath != null ? txtXboxCoverPath.Text : string.Empty,
-                    LastScanPath = SettingsManager.GetSettings().LastScanPath,
+                    LastScanPath = current.LastScanPath,
+                    LastXboxScanPath = current.LastXboxScanPath,
+                    LastPluginEditorPluginsDir = current.LastPluginEditorPluginsDir,
+                    LastPluginEditorRomsDir = current.LastPluginEditorRomsDir,
+                    LastPluginEditorImagesDir = current.LastPluginEditorImagesDir,
+                    LastPluginEditorTitlesFile = current.LastPluginEditorTitlesFile,
 
                     // 保存网络设置
                     ApiKey = txtApiKey.Text,
-                    EnableProxy = chkEnableProxy.IsChecked ?? false
+                    EnableProxy = chkEnableProxy.IsChecked ?? false,
+                    LastUpdateCheckUtc = current.LastUpdateCheckUtc,
+                    LatestReleaseCachedAtUtc = current.LatestReleaseCachedAtUtc,
+                    CachedLatestVersion = current.CachedLatestVersion,
+                    CachedLatestTagName = current.CachedLatestTagName,
+                    CachedLatestName = current.CachedLatestName,
+                    CachedLatestBody = current.CachedLatestBody,
+                    CachedLatestPublishedAt = current.CachedLatestPublishedAt,
+                    CachedLatestDownloadUrl = current.CachedLatestDownloadUrl,
+                    CachedLatestDownloadSize = current.CachedLatestDownloadSize
                 };
-                
+
                 SettingsManager.UpdateSettings(settings);
                 
                 _coverPath = settings.CoverPath;
                 _wiiuCoverPath = settings.WiiUCoverPath ?? string.Empty;
                 _xboxCoverPath = settings.XboxCoverPath ?? string.Empty;
 
-                MessageBox.Show("设置保存成功！", "成功", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show(AppLanguage.L("设置保存成功！", "Settings saved successfully!"), AppLanguage.L("成功", "Success"), MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"保存设置时出错: {ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"{(AppLanguage.IsEnglish ? "Error saving settings: " : "保存设置时出错: ")}{ex.Message}", AppLanguage.L("错误", "Error"), MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+
+        private void BtnLanguage_Click(object sender, RoutedEventArgs e)
+        {
+            var settings = SettingsManager.GetSettings();
+            settings.UseEnglish = !settings.UseEnglish;
+            SettingsManager.UpdateSettings(settings);
+            ApplyLanguage();
+            // 若插件编辑器已打开，同步刷新其语言
+            if (_wiiPluginEditorWindow != null && _wiiPluginEditorWindow.IsLoaded)
+            {
+                try { _wiiPluginEditorWindow.ApplyLanguageFromGlobal(); } catch { }
+            }
+        }
+
+        /// <summary>根据当前设置刷新主界面中/英文案</summary>
+        private void ApplyLanguage()
+        {
+            bool en = AppLanguage.IsEnglish;
+            string L(string zh, string enStr) => en ? enStr : zh;
+
+            // 标题栏
+            if (txtHeaderSubtitle != null) txtHeaderSubtitle.Text = L("多合一游戏管理工具 | by：B站:86年复古游戏厅", "All-in-one game manager | by: Bilibili 86复古游戏厅");
+            if (btnCheckUpdate != null) btnCheckUpdate.Content = L("检查更新", "Check Update");
+            if (btnLanguage != null) btnLanguage.Content = en ? "中文" : "English";
+
+            // 标签页
+            if (tabSettings != null) tabSettings.Header = L("设置", "Settings");
+            if (tabWii != null) tabWii.Header = "WII";
+            if (tabWiiU != null) tabWiiU.Header = "WIIU";
+            if (tabXbox != null) tabXbox.Header = "XBOX";
+
+            // 设置页
+            if (txtSettingsTitle != null) txtSettingsTitle.Text = L("设置", "Settings");
+            if (expGeneral != null) expGeneral.Header = L("通用设置", "General");
+            if (expPath != null) expPath.Header = L("路径设置", "Paths");
+            if (expNetwork != null) expNetwork.Header = L("网络设置", "Network");
+            if (chkAutoUpdate != null) chkAutoUpdate.Content = L("启用自动更新", "Enable auto-update");
+            if (chkEnableLogging != null) chkEnableLogging.Content = L("启用日志记录", "Enable logging");
+            if (chkCheckDevices != null) chkCheckDevices.Content = L("启动时检查设备", "Check devices on startup");
+            if (lblGamePath != null) lblGamePath.Text = L("游戏存储路径:", "Game path:");
+            if (lblDatabasePath != null) lblDatabasePath.Text = L("数据库路径:", "Database path:");
+            if (lblCoverPath != null) lblCoverPath.Text = L("封面存储路径:", "Cover path:");
+            if (lblWiiUCoverPath != null) lblWiiUCoverPath.Text = L("Wii U 封面路径:", "Wii U cover path:");
+            if (lblXboxCoverPath != null) lblXboxCoverPath.Text = L("Xbox 360 封面路径:", "Xbox 360 cover path:");
+            if (btnBrowseGamePath != null) btnBrowseGamePath.Content = L("浏览...", "Browse...");
+            if (btnBrowseDatabasePath != null) btnBrowseDatabasePath.Content = L("浏览...", "Browse...");
+            if (btnBrowseCoverPath != null) btnBrowseCoverPath.Content = L("浏览...", "Browse...");
+            if (btnBrowseWiiUCoverPath != null) btnBrowseWiiUCoverPath.Content = L("浏览...", "Browse...");
+            if (btnBrowseXboxCoverPath != null) btnBrowseXboxCoverPath.Content = L("浏览...", "Browse...");
+            if (lblApiKey != null) lblApiKey.Text = L("元数据API密钥:", "Metadata API key:");
+            if (chkEnableProxy != null) chkEnableProxy.Content = L("启用代理", "Enable proxy");
+            if (btnSaveSettings != null) btnSaveSettings.Content = L("保存设置", "Save settings");
+
+            // WII 页
+            if (txtWiiSectionTitle != null) txtWiiSectionTitle.Text = L("Wii / NGC 游戏管理", "Wii / NGC Games");
+            if (btnListSourceDirectory != null) btnListSourceDirectory.Content = L("目录", "Directory");
+            if (btnListSourceDisk1 != null) btnListSourceDisk1.Content = L("磁盘1", "Disk 1");
+            if (btnListSourceDisk2 != null) btnListSourceDisk2.Content = L("磁盘2", "Disk 2");
+            if (btnGameQuery != null) btnGameQuery.Content = L("Wii游戏数据库查询", "Wii game database");
+            if (btnAddSource != null) btnAddSource.Content = L("添加", "Add");
+            if (btnSelectMissingOnDisk != null) btnSelectMissingOnDisk.Content = L("选择", "Select");
+            if (btnRemoveSelected != null) btnRemoveSelected.Content = L("删除选中游戏", "Remove selected");
+            if (btnCopyToDisk != null) btnCopyToDisk.Content = L("拷贝", "Copy");
+            if (btnWiiList != null) btnWiiList.Content = L("列表", "List");
+            if (btnRenameGames != null) btnRenameGames.Content = L("游戏重命名", "Rename games");
+            if (btnWiiPluginEditor != null) btnWiiPluginEditor.Content = L("WII插件编辑器", "WII Plugin Editor");
+            if (gbDiscCoverWii != null) gbDiscCoverWii.Header = L("Disc 封面", "Disc cover");
+            if (gb3DCoverWii != null) gb3DCoverWii.Header = L("3D 封面", "3D cover");
+            ApplyLanguageDataGridWii();
+
+            // WIIU 页
+            if (txtWiiUSectionTitle != null) txtWiiUSectionTitle.Text = L("Wii U 游戏管理", "Wii U Games");
+            if (btnWiiUGameQuery != null) btnWiiUGameQuery.Content = L("Wii U 游戏数据库", "Wii U game database");
+            if (btnWiiUAddSource != null) btnWiiUAddSource.Content = L("添加", "Add");
+            if (btnWiiUSelect != null) btnWiiUSelect.Content = L("选择", "Select");
+            if (btnWiiURemoveSelected != null) btnWiiURemoveSelected.Content = L("删除选中", "Remove selected");
+            if (btnWiiUCopy != null) btnWiiUCopy.Content = L("拷贝", "Copy");
+            if (btnWiiUList != null) btnWiiUList.Content = L("列表", "List");
+            if (gbDiscCoverWiiU != null) gbDiscCoverWiiU.Header = L("Disc 封面", "Disc cover");
+            if (gb3DCoverWiiU != null) gb3DCoverWiiU.Header = L("3D 封面", "3D cover");
+            ApplyLanguageDataGridWiiU();
+
+            // XBOX 页
+            if (txtXboxSectionTitle != null) txtXboxSectionTitle.Text = L("Xbox 360 游戏管理", "Xbox 360 Games");
+            if (btnXboxGameQuery != null) btnXboxGameQuery.Content = L("Xbox 360 游戏数据库", "Xbox 360 game database");
+            if (btnXboxAddSource != null) btnXboxAddSource.Content = L("添加", "Add");
+            if (btnXboxSelect != null) btnXboxSelect.Content = L("选择", "Select");
+            if (btnXboxRemoveSelected != null) btnXboxRemoveSelected.Content = L("删除选中", "Remove selected");
+            if (btnXboxCopy != null) btnXboxCopy.Content = L("拷贝", "Copy");
+            if (btnXboxList != null) btnXboxList.Content = L("列表", "List");
+            if (gbCoverXbox != null) gbCoverXbox.Header = L("封面", "Cover");
+            if (gbStatusXbox != null) gbStatusXbox.Header = L("状态", "Status");
+            if (txtXboxStatus != null) txtXboxStatus.Text = L("选中游戏显示详情", "Select a game to see details");
+            ApplyLanguageDataGridXbox();
+        }
+
+        private void ApplyLanguageDataGridWii()
+        {
+            if (dgGames?.Columns == null || dgGames.Columns.Count < 7) return;
+            Func<string, string, string> L = AppLanguage.L;
+            dgGames.Columns[0].Header = L("选", "Sel");
+            dgGames.Columns[1].Header = L("游戏ID", "Game ID");
+            dgGames.Columns[2].Header = L("游戏名称", "Title");
+            dgGames.Columns[3].Header = L("中文名称", "Chinese title");
+            dgGames.Columns[4].Header = L("大小", "Size");
+            dgGames.Columns[5].Header = L("平台", "Platform");
+            dgGames.Columns[6].Header = L("格式", "Format");
+        }
+
+        private void ApplyLanguageDataGridWiiU()
+        {
+            if (dgGamesWiiU?.Columns == null || dgGamesWiiU.Columns.Count < 6) return;
+            Func<string, string, string> L = AppLanguage.L;
+            dgGamesWiiU.Columns[0].Header = L("选", "Sel");
+            dgGamesWiiU.Columns[1].Header = "TITLEID";
+            dgGamesWiiU.Columns[2].Header = L("游戏名称", "Title");
+            dgGamesWiiU.Columns[3].Header = L("中文名称", "Chinese title");
+            dgGamesWiiU.Columns[4].Header = L("大小", "Size");
+            dgGamesWiiU.Columns[5].Header = L("文件夹", "Folder");
+        }
+
+        private void ApplyLanguageDataGridXbox()
+        {
+            if (dgGamesXbox?.Columns == null || dgGamesXbox.Columns.Count < 6) return;
+            Func<string, string, string> L = AppLanguage.L;
+            dgGamesXbox.Columns[0].Header = L("选", "Sel");
+            dgGamesXbox.Columns[1].Header = L("游戏ID", "Game ID");
+            dgGamesXbox.Columns[2].Header = L("游戏名称", "Title");
+            dgGamesXbox.Columns[3].Header = L("中文名称", "Chinese title");
+            dgGamesXbox.Columns[4].Header = L("大小", "Size");
+            dgGamesXbox.Columns[5].Header = L("格式", "Format");
         }
 
         #endregion

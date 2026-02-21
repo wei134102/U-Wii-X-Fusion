@@ -6,18 +6,18 @@
         Background="#F5F5F5">
     <Window.Resources>
         <ContextMenu x:Key="PluginContextMenu">
-            <MenuItem Header="编辑插件(打开 ini)" Click="MenuEditPlugin_Click"/>
-            <MenuItem Header="删除插件(移动到 bak)" Click="MenuDeletePlugin_Click"/>
+            <MenuItem x:Name="miPluginEdit" Header="编辑插件(打开 ini)" Click="MenuEditPlugin_Click"/>
+            <MenuItem x:Name="miPluginDelete" Header="删除插件(移动到 bak)" Click="MenuDeletePlugin_Click"/>
         </ContextMenu>
         <ContextMenu x:Key="RomContextMenu">
-            <MenuItem Header="打开 ROM 所在文件夹" Click="MenuOpenRomFolder_Click"/>
-            <MenuItem Header="添加缺失封面" Click="MenuAddMissingCover_Click"/>
+            <MenuItem x:Name="miRomOpenFolder" Header="打开 ROM 所在文件夹" Click="MenuOpenRomFolder_Click"/>
+            <MenuItem x:Name="miRomAddCover" Header="添加缺失封面" Click="MenuAddMissingCover_Click"/>
         </ContextMenu>
         <ContextMenu x:Key="ImageContextMenu">
-            <MenuItem Header="打开图片所在文件夹" Click="MenuOpenImageFolder_Click"/>
-            <MenuItem Header="调整图片大小" Click="MenuResizeImage_Click"/>
-            <MenuItem Header="重命名图片" Click="MenuRenameImage_Click"/>
-            <MenuItem Header="转换格式" Click="MenuConvertImage_Click"/>
+            <MenuItem x:Name="miImageOpenFolder" Header="打开图片所在文件夹" Click="MenuOpenImageFolder_Click"/>
+            <MenuItem x:Name="miImageResize" Header="调整图片大小" Click="MenuResizeImage_Click"/>
+            <MenuItem x:Name="miImageRename" Header="重命名图片" Click="MenuRenameImage_Click"/>
+            <MenuItem x:Name="miImageConvert" Header="转换格式" Click="MenuConvertImage_Click"/>
         </ContextMenu>
     </Window.Resources>
     <Grid>
@@ -60,7 +60,7 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
-                    <TextBlock Grid.Row="0" Text="插件列表" FontWeight="Bold" Margin="0,0,0,4"/>
+                    <TextBlock x:Name="lblPluginList" Grid.Row="0" Text="插件列表" FontWeight="Bold" Margin="0,0,0,4"/>
                     <ListBox x:Name="listPlugins" Grid.Row="1" SelectionChanged="ListPlugins_SelectionChanged"
                              ContextMenu="{StaticResource PluginContextMenu}"
                              DisplayMemberPath="DisplayName"/>
@@ -75,7 +75,7 @@
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
                     <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,4">
-                        <TextBlock Text="ROM列表" FontWeight="Bold"/>
+                        <TextBlock x:Name="lblRomList" Text="ROM列表" FontWeight="Bold"/>
                         <TextBlock x:Name="txtRomCount" Text="(0)" Margin="8,0,0,0" Foreground="#666"/>
                         <TextBlock x:Name="txtMissingCover" Text="" Margin="12,0,0,0" Foreground="Red" FontWeight="SemiBold"/>
                     </StackPanel>
@@ -84,8 +84,8 @@
                               ContextMenu="{StaticResource RomContextMenu}"
                               CellEditEnding="DgRoms_CellEditEnding">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="文件名" Binding="{Binding FileName}" Width="*" IsReadOnly="True"/>
-                            <DataGridTextColumn Header="显示名称" Binding="{Binding DisplayName}" Width="*"/>
+                            <DataGridTextColumn x:Name="colRomFileName" Header="文件名" Binding="{Binding FileName}" Width="*" IsReadOnly="True"/>
+                            <DataGridTextColumn x:Name="colRomDisplayName" Header="显示名称" Binding="{Binding DisplayName}" Width="*"/>
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>
@@ -100,7 +100,7 @@
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
                     <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,4">
-                        <TextBlock Text="图片列表" FontWeight="Bold"/>
+                        <TextBlock x:Name="lblImageList" Text="图片列表" FontWeight="Bold"/>
                         <TextBlock x:Name="txtImageCount" Text="(0)" Margin="8,0,0,0" Foreground="#666"/>
                     </StackPanel>
                     <DataGrid x:Name="dgImages" Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True"
@@ -108,8 +108,8 @@
                               ContextMenu="{StaticResource ImageContextMenu}"
                               SelectionChanged="DgImages_SelectionChanged">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="文件名" Binding="{Binding FileName}" Width="*"/>
-                            <DataGridTextColumn Header="分辨率" Binding="{Binding Resolution}" Width="80"/>
+                            <DataGridTextColumn x:Name="colImageFileName" Header="文件名" Binding="{Binding FileName}" Width="*"/>
+                            <DataGridTextColumn x:Name="colImageResolution" Header="分辨率" Binding="{Binding Resolution}" Width="80"/>
                         </DataGrid.Columns>
                     </DataGrid>
                     <Border Grid.Row="2" BorderBrush="#E0E0E0" BorderThickness="0,1,0,0" Margin="0,4,0,0">
