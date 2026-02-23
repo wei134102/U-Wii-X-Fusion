@@ -87,6 +87,17 @@
                                 <CheckBox x:Name="chkEnableProxy" Content="启用代理" Margin="0,5,0,0"/>
                             </StackPanel>
                         </Expander>
+                        <Expander x:Name="expCoverDownload" Header="封面下载设置" Margin="0,0,0,10" IsExpanded="True">
+                            <StackPanel Margin="10,0,0,0">
+                                <TextBlock Text="Wii / Wii U 从 GameTDB 下载哪些类型的封面：" FontSize="12" Margin="0,0,0,6"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
+                                    <CheckBox x:Name="chkCover2D" Content="2D 封面" Margin="0,0,15,0"/>
+                                    <CheckBox x:Name="chkCover3D" Content="3D 封面" Margin="0,0,15,0"/>
+                                    <CheckBox x:Name="chkCoverDisc" Content="Disc 封面" Margin="0,0,15,0"/>
+                                    <CheckBox x:Name="chkCoverFull" Content="Full 封面" Margin="0,0,15,0"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Expander>
                         <Button x:Name="btnSaveSettings" Content="保存设置" Width="100" Height="30" Margin="0,20,0,0" Click="BtnSaveSettings_Click"/>
                     </StackPanel>
                 </Grid>
@@ -177,6 +188,7 @@
                                         </ContextMenu>
                                     </Button.ContextMenu>
                                 </Button>
+                                <Button x:Name="btnWiiDownloadCovers" Content="下载封面" Width="80" Padding="6,3" Margin="0,0,6,0" Click="BtnWiiDownloadCovers_Click"/>
                             </StackPanel>
                             <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
                                 <Button x:Name="btnWiiList" Content="列表" Width="60" Padding="6,3" Margin="0,0,8,0" Click="BtnWiiList_Click">
@@ -352,6 +364,7 @@
                                             </ContextMenu>
                                         </Button.ContextMenu>
                                     </Button>
+                                    <Button x:Name="btnWiiUDownloadCovers" Content="下载封面" Width="80" Padding="6,3" Margin="0,0,6,0" Click="BtnWiiUDownloadCovers_Click"/>
                                 </StackPanel>
                             </Grid>
 

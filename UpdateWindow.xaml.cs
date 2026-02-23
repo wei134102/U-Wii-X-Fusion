@@ -76,27 +76,36 @@ namespace U_Wii_X_Fusion
             btnCancel.IsEnabled = false;
             pbDownload.Visibility = Visibility.Visible;
             pbDownload.Value = 0;
+            txtStatus.Text = "正在下载更新包...";
+            txtStatus.Foreground = System.Windows.Media.Brushes.Black;
 
             try
             {
                 var progress = new Progress<int>(p => pbDownload.Value = p);
                 string zipPath = await _updateService.DownloadUpdateAsync(_latestRelease.DownloadUrl, progress);
+
+                txtStatus.Text = "正在解压更新包...";
+                pbDownload.Value = 0;
                 string extractDir = _updateService.ExtractUpdate(zipPath);
-                
+
+                txtStatus.Text = "正在准备安装...";
                 string targetDir = AppDomain.CurrentDomain.BaseDirectory;
                 string exePath = System.Reflection.Assembly.GetExecutingAssembly().Location;
                 int pid = Process.GetCurrentProcess().Id;
 
                 _updateService.CreateUpdateScript(extractDir, targetDir, exePath, pid);
-                
-                MessageBox.Show("更新文件已下载。程序将在关闭后自动更新并重启。\n请点击【关闭】按钮完成更新。",
+
+                MessageBox.Show("更新文件已下载并准备就绪。程序将在关闭后自动更新并重启。\n请点击【关闭】按钮完成更新。",
                     "更新准备完成", MessageBoxButton.OK, MessageBoxImage.Information);
-                
+
                 Application.Current.Shutdown();
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"下载或应用更新失败: {ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+                string hint = "\n\n您可关闭本窗口后再次点击「下载并更新」重试，或从 GitHub Releases 页面手动下载 ZIP 并解压覆盖。";
+                MessageBox.Show("下载或应用更新失败：" + ex.Message + hint, "更新失败", MessageBoxButton.OK, MessageBoxImage.Error);
+                txtStatus.Text = "更新失败，可重试或手动下载。";
+                txtStatus.Foreground = System.Windows.Media.Brushes.Red;
                 btnDownload.IsEnabled = true;
                 btnCancel.IsEnabled = true;
                 pbDownload.Visibility = Visibility.Collapsed;

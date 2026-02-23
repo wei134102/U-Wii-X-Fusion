@@ -194,6 +194,7 @@
     <Compile Include="Core\Models\GameInfo.cs" />
     <Compile Include="Core\Xbox360CoverDownloader.cs" />
     <Compile Include="Core\Xbox360FtpOperations.cs" />
+    <Compile Include="Core\WiiCoverDownloader.cs" />
     <!-- Database 目录 -->
     <Compile Include="Database\Interfaces\IGameDatabase.cs" />
     <Compile Include="Database\Local\LocalGameDatabase.cs" />

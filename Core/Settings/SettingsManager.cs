@@ -13,6 +13,15 @@ namespace U_Wii_X_Fusion.Core.Settings
         /// <summary>使用英文界面（false=中文，true=英文）</summary>
         public bool UseEnglish { get; set; } = false;
 
+        /// <summary>Wii 封面下载：2D 封面（cover）</summary>
+        public bool DownloadWiiCover2D { get; set; } = true;
+        /// <summary>Wii / Wii U 封面下载：3D 封面（cover3D）</summary>
+        public bool DownloadWiiCover3D { get; set; } = true;
+        /// <summary>Wii / Wii U 封面下载：Disc 封面（disc）</summary>
+        public bool DownloadWiiDiscCover { get; set; } = true;
+        /// <summary>Wii 封面下载：Full 封面（coverfull）</summary>
+        public bool DownloadWiiFullCover { get; set; } = true;
+
         // 路径设置
         public string GamePath { get; set; } = string.Empty;
         public string DatabasePath { get; set; } = string.Empty;

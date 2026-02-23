@@ -2577,6 +2577,129 @@ namespace U_Wii_X_Fusion
             MessageBox.Show($"下载完成：成功 {ok} 个，失败 {fail} 个。", "下载封面", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
+        private void BtnWiiDownloadCovers_Click(object sender, RoutedEventArgs e)
+        {
+            DownloadWiiCoversForSelected();
+        }
+
+        private async void DownloadWiiCoversForSelected()
+        {
+            if (string.IsNullOrEmpty(_coverPath) || !Directory.Exists(_coverPath))
+            {
+                MessageBox.Show("请先在设置中设置封面存储路径。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            var toDownload = _scannedGames.Where(g => g.IsSelected).ToList();
+            if (toDownload.Count == 0)
+            {
+                var game = dgGames?.SelectedItem as GameInfo;
+                if (game != null) toDownload.Add(game);
+            }
+            if (toDownload.Count == 0)
+            {
+                MessageBox.Show("请先选中或勾选要下载封面的游戏。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            int total = toDownload.Count;
+            int ok = 0, fail = 0;
+            txtWiiListStatus.Text = $"  正在为 {total} 个游戏下载封面...";
+
+            try
+            {
+                for (int i = 0; i < toDownload.Count; i++)
+                {
+                    var game = toDownload[i];
+                    int current = i + 1;
+                    bool success = false;
+                    await System.Threading.Tasks.Task.Run(() =>
+                    {
+                        if (string.IsNullOrEmpty(game.GameId)) return;
+                        success = Core.WiiCoverDownloader.DownloadWiiCovers(game.GameId, _coverPath);
+                    });
+                    if (success) ok++; else if (!string.IsNullOrEmpty(game.GameId)) fail++;
+                    txtWiiListStatus.Text = $"  正在下载封面 {current}/{total}（成功 {ok}，失败 {fail}）";
+                }
+
+                if (ok > 0)
+                {
+                    var sel = dgGames?.SelectedItem as GameInfo;
+                    UpdateGameVisuals(sel);
+                }
+
+                MessageBox.Show($"Wii 封面下载完成：成功 {ok} 个，失败 {fail} 个。", "下载封面", MessageBoxButton.OK, MessageBoxImage.Information);
+                UpdateWiiListStatus();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("下载 Wii 封面时出错：" + ex.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+
+        private void BtnWiiUDownloadCovers_Click(object sender, RoutedEventArgs e)
+        {
+            DownloadWiiUCoversForSelected();
+        }
+
+        private async void DownloadWiiUCoversForSelected()
+        {
+            string basePath = !string.IsNullOrEmpty(_wiiuCoverPath) ? _wiiuCoverPath : _coverPath;
+            if (string.IsNullOrEmpty(basePath) || !Directory.Exists(basePath))
+            {
+                MessageBox.Show("请先在设置中设置 Wii U 封面路径或通用封面存储路径。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            var toDownload = _wiiuGames.Where(g => g.IsSelected).ToList();
+            if (toDownload.Count == 0)
+            {
+                var game = dgGamesWiiU?.SelectedItem as GameInfo;
+                if (game != null) toDownload.Add(game);
+            }
+            if (toDownload.Count == 0)
+            {
+                MessageBox.Show("请先选中或勾选要下载封面的 Wii U 游戏。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            int total = toDownload.Count;
+            int ok = 0, fail = 0;
+            if (txtWiiUListStatus != null)
+                txtWiiUListStatus.Text = $"  正在为 {total} 个 Wii U 游戏下载封面...";
+
+            try
+            {
+                for (int i = 0; i < toDownload.Count; i++)
+                {
+                    var game = toDownload[i];
+                    int current = i + 1;
+                    bool success = false;
+                    await System.Threading.Tasks.Task.Run(() =>
+                    {
+                        if (string.IsNullOrEmpty(game.GameId)) return;
+                        success = Core.WiiCoverDownloader.DownloadWiiUCovers(game.GameId, basePath);
+                    });
+                    if (success) ok++; else if (!string.IsNullOrEmpty(game.GameId)) fail++;
+                    if (txtWiiUListStatus != null)
+                        txtWiiUListStatus.Text = $"  正在下载封面 {current}/{total}（成功 {ok}，失败 {fail}）";
+                }
+
+                if (ok > 0)
+                {
+                    var sel = dgGamesWiiU?.SelectedItem as GameInfo;
+                    UpdateWiiUGameVisuals(sel);
+                }
+
+                MessageBox.Show($"Wii U 封面下载完成：成功 {ok} 个，失败 {fail} 个。", "下载封面", MessageBoxButton.OK, MessageBoxImage.Information);
+                UpdateWiiUListStatus();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("下载 Wii U 封面时出错：" + ex.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+
         private void SetXboxStatus(string text)
         {
             if (txtXboxStatus != null) txtXboxStatus.Text = text ?? "";
@@ -2959,6 +3082,12 @@ namespace U_Wii_X_Fusion
                 // 加载网络设置
                 txtApiKey.Text = settings.ApiKey;
                 chkEnableProxy.IsChecked = settings.EnableProxy;
+
+                // 加载封面下载设置
+                if (chkCover2D != null) chkCover2D.IsChecked = settings.DownloadWiiCover2D;
+                if (chkCover3D != null) chkCover3D.IsChecked = settings.DownloadWiiCover3D;
+                if (chkCoverDisc != null) chkCoverDisc.IsChecked = settings.DownloadWiiDiscCover;
+                if (chkCoverFull != null) chkCoverFull.IsChecked = settings.DownloadWiiFullCover;
             }
             catch (Exception ex)
             {
@@ -2979,7 +3108,13 @@ namespace U_Wii_X_Fusion
                     CheckDevices = chkCheckDevices.IsChecked ?? false,
                     UseEnglish = current.UseEnglish,
 
-                    // 保存路径设置
+                    // Wii 封面下载设置
+                    DownloadWiiCover2D = chkCover2D?.IsChecked ?? true,
+                    DownloadWiiCover3D = chkCover3D?.IsChecked ?? true,
+                    DownloadWiiDiscCover = chkCoverDisc?.IsChecked ?? true,
+                    DownloadWiiFullCover = chkCoverFull?.IsChecked ?? true,
+
+                    // 路径设置
                     GamePath = txtGamePath.Text,
                     DatabasePath = txtDatabasePath.Text,
                     CoverPath = txtCoverPath.Text,
@@ -2992,7 +3127,7 @@ namespace U_Wii_X_Fusion
                     LastPluginEditorImagesDir = current.LastPluginEditorImagesDir,
                     LastPluginEditorTitlesFile = current.LastPluginEditorTitlesFile,
 
-                    // 保存网络设置
+                    // 网络设置
                     ApiKey = txtApiKey.Text,
                     EnableProxy = chkEnableProxy.IsChecked ?? false,
                     LastUpdateCheckUtc = current.LastUpdateCheckUtc,
@@ -3070,6 +3205,11 @@ namespace U_Wii_X_Fusion
             if (btnBrowseXboxCoverPath != null) btnBrowseXboxCoverPath.Content = L("浏览...", "Browse...");
             if (lblApiKey != null) lblApiKey.Text = L("元数据API密钥:", "Metadata API key:");
             if (chkEnableProxy != null) chkEnableProxy.Content = L("启用代理", "Enable proxy");
+            if (expCoverDownload != null) expCoverDownload.Header = L("封面下载设置", "Cover download options");
+            if (chkCover2D != null) chkCover2D.Content = L("2D 封面", "2D cover");
+            if (chkCover3D != null) chkCover3D.Content = L("3D 封面", "3D cover");
+            if (chkCoverDisc != null) chkCoverDisc.Content = L("Disc 封面", "Disc cover");
+            if (chkCoverFull != null) chkCoverFull.Content = L("Full 封面", "Full cover");
             if (btnSaveSettings != null) btnSaveSettings.Content = L("保存设置", "Save settings");
 
             // WII 页
@@ -3083,6 +3223,7 @@ namespace U_Wii_X_Fusion
             if (btnRemoveSelected != null) btnRemoveSelected.Content = L("删除选中游戏", "Remove selected");
             if (btnCopyToDisk != null) btnCopyToDisk.Content = L("拷贝", "Copy");
             if (btnWiiList != null) btnWiiList.Content = L("列表", "List");
+            if (btnWiiDownloadCovers != null) btnWiiDownloadCovers.Content = L("下载封面", "Download covers");
             if (btnRenameGames != null) btnRenameGames.Content = L("游戏重命名", "Rename games");
             if (btnWiiPluginEditor != null) btnWiiPluginEditor.Content = L("WII插件编辑器", "WII Plugin Editor");
             if (gbDiscCoverWii != null) gbDiscCoverWii.Header = L("Disc 封面", "Disc cover");
@@ -3097,6 +3238,7 @@ namespace U_Wii_X_Fusion
             if (btnWiiURemoveSelected != null) btnWiiURemoveSelected.Content = L("删除选中", "Remove selected");
             if (btnWiiUCopy != null) btnWiiUCopy.Content = L("拷贝", "Copy");
             if (btnWiiUList != null) btnWiiUList.Content = L("列表", "List");
+            if (btnWiiUDownloadCovers != null) btnWiiUDownloadCovers.Content = L("下载封面", "Download covers");
             if (gbDiscCoverWiiU != null) gbDiscCoverWiiU.Header = L("Disc 封面", "Disc cover");
             if (gb3DCoverWiiU != null) gb3DCoverWiiU.Header = L("3D 封面", "3D cover");
             ApplyLanguageDataGridWiiU();
