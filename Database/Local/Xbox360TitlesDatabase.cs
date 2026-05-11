@@ -153,7 +153,8 @@ namespace U_Wii_X_Fusion.Database.Local
             {
                 TitleId = GetTitleIdFromEntry(obj),
                 Name = GetString(obj, "Title") ?? GetString(obj, "name"),
-                ChineseName = GetString(obj, "Title_cn") ?? GetString(obj, "chinese_name")
+                ChineseName = GetString(obj, "Title_cn") ?? GetString(obj, "chinese_name"),
+                Category = GetString(obj, "Category")
             };
         }
 
@@ -212,6 +213,7 @@ namespace U_Wii_X_Fusion.Database.Local
             public string TitleId { get; set; }
             public string Name { get; set; }
             public string ChineseName { get; set; }
+            public string Category { get; set; }
         }
     }
 }

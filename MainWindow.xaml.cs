@@ -5,8 +5,10 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
@@ -56,6 +58,30 @@ namespace U_Wii_X_Fusion
         private WiiUTitlesJsonLookup _wiiuTitlesJsonLookup;
         private readonly List<GameInfo> _wiiuGames = new List<GameInfo>();
         private readonly WiiUGameIdentifier _wiiuIdentifier = new WiiUGameIdentifier();
+        private readonly HashSet<string> _wiiuImportedListIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        private static readonly string[] BuiltinWiiGenres =
+        {
+            "Action", "Adventure", "Arcade", "Education", "Family", "Fighting",
+            "Music", "Party", "Platformer", "Puzzle", "Racing", "RPG",
+            "Shooter", "Simulation", "Sports", "Strategy", "WiiWare"
+        };
+        private static readonly string[] BuiltinWiiControllers =
+        {
+            "Wii Remote", "Nunchuk", "Classic Controller", "Classic Controller Pro",
+            "GameCube Controller", "Wii Zapper", "Balance Board", "Wii Wheel",
+            "MotionPlus", "Guitar", "Drums", "Microphone"
+        };
+        private static readonly string[] BuiltinWiiUGenres =
+        {
+            "Action", "Adventure", "Arcade", "Education", "Family", "Fighting",
+            "Music", "Party", "Platformer", "Puzzle", "Racing", "RPG",
+            "Shooter", "Simulation", "Sports", "Strategy"
+        };
+        private static readonly string[] BuiltinWiiUControllers =
+        {
+            "Wii U GamePad", "Wii U Pro Controller", "Wii Remote", "Nunchuk",
+            "Classic Controller", "GameCube Controller", "Balance Board", "Touch", "Motion"
+        };
 
         private readonly List<GameInfo> _xboxGames = new List<GameInfo>();
         private Xbox360TitlesDatabase _xboxTitlesDatabase;
@@ -85,6 +111,12 @@ namespace U_Wii_X_Fusion
             LoadWiiUCoverPath();
             LoadXboxCoverPath();
             LoadDrives();
+            RefreshWiiFilterOptions();
+            ApplyWiiFilters();
+            RefreshWiiUFilterOptions();
+            ApplyWiiUFilters();
+            RefreshXboxFilterOptions();
+            ApplyXboxFilters();
             UpdateGameCount(); // 初始化时显示 0
             UpdateWiiListStatus();
             UpdateWiiUGameCount();
@@ -207,6 +239,172 @@ namespace U_Wii_X_Fusion
             btnCheckUpdate.Click += BtnCheckUpdate_Click;
         }
 
+        private static string GetComboDisplayValue(ComboBox comboBox)
+        {
+            if (comboBox?.SelectedItem is ComboBoxItem item)
+                return item.Content?.ToString();
+            return comboBox?.SelectedItem?.ToString();
+        }
+
+        private static string NormalizeGameId(string gameId)
+        {
+            return string.IsNullOrWhiteSpace(gameId) ? string.Empty : gameId.Trim().ToUpperInvariant();
+        }
+
+        private void RefreshWiiFilterOptions()
+        {
+            if (cmbWiiGenreFilter == null || cmbWiiControllerFilter == null || cmbWiiPlayersFilter == null || _scannedGames == null)
+                return;
+
+            string selectedGenre = GetComboDisplayValue(cmbWiiGenreFilter) ?? "全部类别";
+            string selectedController = GetComboDisplayValue(cmbWiiControllerFilter) ?? "全部控制器";
+            string selectedPlayers = GetComboDisplayValue(cmbWiiPlayersFilter) ?? "全部人数";
+
+            // 先放入“全部”选项，保证下拉框永不为空
+            cmbWiiGenreFilter.Items.Clear();
+            cmbWiiGenreFilter.Items.Add(new ComboBoxItem { Content = "全部类别" });
+            cmbWiiControllerFilter.Items.Clear();
+            cmbWiiControllerFilter.Items.Add(new ComboBoxItem { Content = "全部控制器" });
+            cmbWiiPlayersFilter.Items.Clear();
+            cmbWiiPlayersFilter.Items.Add(new ComboBoxItem { Content = "全部人数" });
+
+            try
+            {
+                var genres = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                var controllers = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+                // 固定内置词库：保证程序启动后即可筛选
+                foreach (var genre in BuiltinWiiGenres)
+                    genres.Add(genre);
+                foreach (var controller in BuiltinWiiControllers)
+                    controllers.Add(controller);
+
+                foreach (var game in _scannedGames.Where(g => g != null))
+                {
+                    // 1) 优先使用列表中已补全字段
+                    if (game.Genres != null)
+                    {
+                        foreach (var genre in game.Genres.Where(s => !string.IsNullOrWhiteSpace(s)))
+                            genres.Add(genre.Trim());
+                    }
+                    if (game.Controllers != null)
+                    {
+                        foreach (var controller in game.Controllers.Where(s => !string.IsNullOrWhiteSpace(s)))
+                            controllers.Add(controller.Trim());
+                    }
+
+                    // 2) 兜底：按游戏ID回查数据库，解决“列表里未补全导致下拉为空”
+                    if ((genres.Count == 0 || controllers.Count == 0) && _wiiDatabase != null)
+                    {
+                        string gameId = NormalizeGameId(game.GameId);
+                        if (!string.IsNullOrEmpty(gameId))
+                        {
+                            var dbGame = _wiiDatabase.GetGame(gameId);
+                            if (dbGame != null)
+                            {
+                                if (dbGame.Genres != null)
+                                {
+                                    foreach (var genre in dbGame.Genres.Where(s => !string.IsNullOrWhiteSpace(s)))
+                                        genres.Add(genre.Trim());
+                                }
+                                if (dbGame.Controllers != null)
+                                {
+                                    foreach (var controller in dbGame.Controllers.Where(s => !string.IsNullOrWhiteSpace(s)))
+                                        controllers.Add(controller.Trim());
+                                }
+                            }
+                        }
+                    }
+                }
+
+                foreach (var genre in genres.OrderBy(s => s))
+                    cmbWiiGenreFilter.Items.Add(new ComboBoxItem { Content = genre });
+                foreach (var controller in controllers.OrderBy(s => s))
+                    cmbWiiControllerFilter.Items.Add(new ComboBoxItem { Content = controller });
+
+                foreach (var p in Enumerable.Range(1, 8))
+                    cmbWiiPlayersFilter.Items.Add(new ComboBoxItem { Content = $"{p}人" });
+
+                foreach (var p in _scannedGames.Where(g => g != null && g.Players > 0).Select(g => g.Players).Distinct().OrderBy(v => v))
+                {
+                    string text = $"{p}人";
+                    bool exists = cmbWiiPlayersFilter.Items.OfType<ComboBoxItem>()
+                        .Any(i => string.Equals(i.Content?.ToString(), text, StringComparison.OrdinalIgnoreCase));
+                    if (!exists) cmbWiiPlayersFilter.Items.Add(new ComboBoxItem { Content = text });
+                }
+            }
+            catch
+            {
+                // 保持“全部”可用，不阻断页面
+            }
+
+            SelectComboByValue(cmbWiiGenreFilter, selectedGenre, "全部类别");
+            SelectComboByValue(cmbWiiControllerFilter, selectedController, "全部控制器");
+            SelectComboByValue(cmbWiiPlayersFilter, selectedPlayers, "全部人数");
+        }
+
+        private static void SelectComboByValue(ComboBox comboBox, string preferredValue, string fallbackValue)
+        {
+            string target = string.IsNullOrWhiteSpace(preferredValue) ? fallbackValue : preferredValue;
+            foreach (var item in comboBox.Items.OfType<ComboBoxItem>())
+            {
+                if (string.Equals(item.Content?.ToString(), target, StringComparison.OrdinalIgnoreCase))
+                {
+                    comboBox.SelectedItem = item;
+                    return;
+                }
+            }
+            comboBox.SelectedIndex = 0;
+        }
+
+        private bool MatchesWiiFilters(GameInfo game)
+        {
+            string genre = GetComboDisplayValue(cmbWiiGenreFilter);
+            string controller = GetComboDisplayValue(cmbWiiControllerFilter);
+            string playersText = GetComboDisplayValue(cmbWiiPlayersFilter);
+
+            bool genreAll = string.IsNullOrWhiteSpace(genre) || genre == "全部类别";
+            bool controllerAll = string.IsNullOrWhiteSpace(controller) || controller == "全部控制器";
+            bool playersAll = string.IsNullOrWhiteSpace(playersText) || playersText == "全部人数";
+            if (genreAll && controllerAll && playersAll) return true;
+
+            int? players = null;
+            if (!playersAll && playersText.EndsWith("人"))
+            {
+                string num = playersText.TrimEnd('人').Trim();
+                if (int.TryParse(num, out int p) && p > 0)
+                    players = p;
+            }
+
+            bool genreMatch = genreAll || (game?.Genres != null && game.Genres.Any(g => string.Equals(g, genre, StringComparison.OrdinalIgnoreCase)));
+            bool controllerMatch = controllerAll || (game?.Controllers != null && game.Controllers.Any(c => string.Equals(c, controller, StringComparison.OrdinalIgnoreCase)));
+            bool playersMatch = playersAll || (game != null && game.Players == players);
+            return genreMatch && controllerMatch && playersMatch;
+        }
+
+        private void ApplyWiiFilters()
+        {
+            if (dgGames == null || _scannedGames == null) return;
+            var view = CollectionViewSource.GetDefaultView(dgGames.ItemsSource ?? _scannedGames);
+            if (view == null) return;
+            view.Filter = obj => MatchesWiiFilters(obj as GameInfo);
+            view.Refresh();
+            UpdateGameCount();
+        }
+
+        private void CmbWiiFilter_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            ApplyWiiFilters();
+        }
+
+        private void BtnWiiFilterReset_Click(object sender, RoutedEventArgs e)
+        {
+            SelectComboByValue(cmbWiiGenreFilter, "全部类别", "全部类别");
+            SelectComboByValue(cmbWiiControllerFilter, "全部控制器", "全部控制器");
+            SelectComboByValue(cmbWiiPlayersFilter, "全部人数", "全部人数");
+            ApplyWiiFilters();
+        }
+
         private void BtnCheckUpdate_Click(object sender, RoutedEventArgs e)
         {
             var updateService = new UpdateService("wei134102", "U-Wii-X-Fusion");
@@ -276,8 +474,10 @@ namespace U_Wii_X_Fusion
         /// <summary>更新游戏数量统计显示</summary>
         private void UpdateGameCount()
         {
-            int wiiCount = _scannedGames.Count(g => g.Platform == "Wii");
-            int ngcCount = _scannedGames.Count(g => IsNgcGame(g));
+            var visibleGames = (dgGames?.Items?.SourceCollection as IEnumerable<object>)?.OfType<GameInfo>().ToList()
+                ?? _scannedGames;
+            int wiiCount = visibleGames.Count(g => g.Platform == "Wii");
+            int ngcCount = visibleGames.Count(g => IsNgcGame(g));
             txtGameCount.Text = $"Wii: {wiiCount}  |  NGC: {ngcCount}";
         }
 
@@ -434,6 +634,8 @@ namespace U_Wii_X_Fusion
                 if (_scannedGames == targetList)
                 {
                     dgGames.Items.Refresh();
+                    RefreshWiiFilterOptions();
+                    ApplyWiiFilters();
                     UpdateGameCount();
                     UpdateWiiListStatus();
                 }
@@ -522,7 +724,9 @@ namespace U_Wii_X_Fusion
         {
             // 仅在“目录”模式下允许添加文件/目录
             _currentListSource = GameListSource.Directory;
-            btnAddSource.ContextMenu?.IsOpen.Equals(true);
+            _scannedGames = _directoryGames;
+            if (dgGames != null)
+                dgGames.ItemsSource = _scannedGames;
             if (btnAddSource.ContextMenu != null)
             {
                 btnAddSource.ContextMenu.PlacementTarget = btnAddSource;
@@ -532,6 +736,10 @@ namespace U_Wii_X_Fusion
 
         private void MenuAddDirectory_Click(object sender, RoutedEventArgs e)
         {
+            _currentListSource = GameListSource.Directory;
+            _scannedGames = _directoryGames;
+            if (dgGames != null)
+                dgGames.ItemsSource = _scannedGames;
             using (var dlg = new System.Windows.Forms.FolderBrowserDialog())
             {
                 dlg.Description = "选择包含 Wii/NGC 游戏的目录";
@@ -544,6 +752,10 @@ namespace U_Wii_X_Fusion
 
         private void MenuAddFile_Click(object sender, RoutedEventArgs e)
         {
+            _currentListSource = GameListSource.Directory;
+            _scannedGames = _directoryGames;
+            if (dgGames != null)
+                dgGames.ItemsSource = _scannedGames;
             var ofd = new OpenFileDialog
             {
                 Title = "选择 Wii/NGC 游戏文件",
@@ -611,20 +823,26 @@ namespace U_Wii_X_Fusion
 
         private void BtnSelectAll_Click(object sender, RoutedEventArgs e)
         {
-            foreach (var g in _scannedGames) g.IsSelected = true;
+            if (_scannedGames == null) return;
+            // 仅选中当前筛选下的条目，并取消不在筛选内的勾选（与列表视图一致）
+            foreach (var g in _scannedGames.Where(x => x != null))
+                g.IsSelected = MatchesWiiFilters(g);
             dgGames.Items.Refresh();
             UpdateWiiListStatus();
         }
 
         private void BtnInvertSelect_Click(object sender, RoutedEventArgs e)
         {
-            foreach (var g in _scannedGames) g.IsSelected = !g.IsSelected;
+            if (_scannedGames == null) return;
+            foreach (var g in _scannedGames.Where(x => x != null && MatchesWiiFilters(x)))
+                g.IsSelected = !g.IsSelected;
             dgGames.Items.Refresh();
             UpdateWiiListStatus();
         }
 
         private void BtnClearSelect_Click(object sender, RoutedEventArgs e)
         {
+            if (_scannedGames == null) return;
             foreach (var g in _scannedGames) g.IsSelected = false;
             dgGames.Items.Refresh();
             UpdateWiiListStatus();
@@ -641,6 +859,8 @@ namespace U_Wii_X_Fusion
             _scannedGames = _directoryGames;
             dgGames.ItemsSource = _scannedGames;
             dgGames.Items.Refresh();
+            RefreshWiiFilterOptions();
+            ApplyWiiFilters();
             UpdateGameCount();
             UpdateWiiListStatus();
         }
@@ -662,6 +882,8 @@ namespace U_Wii_X_Fusion
             _scannedGames = _disk1Games;
             dgGames.ItemsSource = _scannedGames;
             dgGames.Items.Refresh();
+            RefreshWiiFilterOptions();
+            ApplyWiiFilters();
             UpdateGameCount();
             UpdateWiiListStatus();
         }
@@ -681,6 +903,8 @@ namespace U_Wii_X_Fusion
             _scannedGames = _disk2Games;
             dgGames.ItemsSource = _scannedGames;
             dgGames.Items.Refresh();
+            RefreshWiiFilterOptions();
+            ApplyWiiFilters();
             UpdateGameCount();
             UpdateWiiListStatus();
         }
@@ -916,6 +1140,8 @@ namespace U_Wii_X_Fusion
             if (_scannedGames == targetList)
             {
                 dgGames.Items.Refresh();
+                    RefreshWiiFilterOptions();
+                    ApplyWiiFilters();
                 UpdateGameCount();
                 UpdateWiiListStatus();
             }
@@ -1560,7 +1786,112 @@ namespace U_Wii_X_Fusion
         {
             if (txtWiiUGameCount == null) return;
             int n = _wiiuGames?.Count ?? 0;
+            var view = dgGamesWiiU != null ? CollectionViewSource.GetDefaultView(dgGamesWiiU.ItemsSource) : null;
+            if (view != null)
+                n = view.Cast<object>().Count();
             txtWiiUGameCount.Text = n > 0 ? $"共 {n} 款游戏" : "";
+        }
+
+        private void RefreshWiiUFilterOptions()
+        {
+            if (cmbWiiUGenreFilter == null || cmbWiiUControllerFilter == null || cmbWiiUPlayersFilter == null || _wiiuGames == null)
+                return;
+
+            string selectedGenre = GetComboDisplayValue(cmbWiiUGenreFilter) ?? "全部类别";
+            string selectedController = GetComboDisplayValue(cmbWiiUControllerFilter) ?? "全部控制器";
+            string selectedPlayers = GetComboDisplayValue(cmbWiiUPlayersFilter) ?? "全部人数";
+
+            cmbWiiUGenreFilter.Items.Clear();
+            cmbWiiUGenreFilter.Items.Add(new ComboBoxItem { Content = "全部类别" });
+            cmbWiiUControllerFilter.Items.Clear();
+            cmbWiiUControllerFilter.Items.Add(new ComboBoxItem { Content = "全部控制器" });
+            cmbWiiUPlayersFilter.Items.Clear();
+            cmbWiiUPlayersFilter.Items.Add(new ComboBoxItem { Content = "全部人数" });
+
+            var genres = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var controllers = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var genre in BuiltinWiiUGenres) genres.Add(genre);
+            foreach (var controller in BuiltinWiiUControllers) controllers.Add(controller);
+
+            foreach (var game in _wiiuGames.Where(g => g != null))
+            {
+                if (game.Genres != null)
+                {
+                    foreach (var genre in game.Genres.Where(s => !string.IsNullOrWhiteSpace(s)))
+                        genres.Add(genre.Trim());
+                }
+                if (game.Controllers != null)
+                {
+                    foreach (var controller in game.Controllers.Where(s => !string.IsNullOrWhiteSpace(s)))
+                        controllers.Add(controller.Trim());
+                }
+            }
+
+            foreach (var genre in genres.OrderBy(s => s))
+                cmbWiiUGenreFilter.Items.Add(new ComboBoxItem { Content = genre });
+            foreach (var controller in controllers.OrderBy(s => s))
+                cmbWiiUControllerFilter.Items.Add(new ComboBoxItem { Content = controller });
+            foreach (var p in Enumerable.Range(1, 8))
+                cmbWiiUPlayersFilter.Items.Add(new ComboBoxItem { Content = $"{p}人" });
+            foreach (var p in _wiiuGames.Where(g => g != null && g.Players > 0).Select(g => g.Players).Distinct().OrderBy(v => v))
+            {
+                string text = $"{p}人";
+                bool exists = cmbWiiUPlayersFilter.Items.OfType<ComboBoxItem>()
+                    .Any(i => string.Equals(i.Content?.ToString(), text, StringComparison.OrdinalIgnoreCase));
+                if (!exists) cmbWiiUPlayersFilter.Items.Add(new ComboBoxItem { Content = text });
+            }
+
+            SelectComboByValue(cmbWiiUGenreFilter, selectedGenre, "全部类别");
+            SelectComboByValue(cmbWiiUControllerFilter, selectedController, "全部控制器");
+            SelectComboByValue(cmbWiiUPlayersFilter, selectedPlayers, "全部人数");
+        }
+
+        private bool MatchesWiiUFilters(GameInfo game)
+        {
+            string genre = GetComboDisplayValue(cmbWiiUGenreFilter);
+            string controller = GetComboDisplayValue(cmbWiiUControllerFilter);
+            string playersText = GetComboDisplayValue(cmbWiiUPlayersFilter);
+
+            bool genreAll = string.IsNullOrWhiteSpace(genre) || genre == "全部类别";
+            bool controllerAll = string.IsNullOrWhiteSpace(controller) || controller == "全部控制器";
+            bool playersAll = string.IsNullOrWhiteSpace(playersText) || playersText == "全部人数";
+            if (genreAll && controllerAll && playersAll) return true;
+
+            int? players = null;
+            if (!playersAll && playersText.EndsWith("人"))
+            {
+                string num = playersText.TrimEnd('人').Trim();
+                if (int.TryParse(num, out int p) && p > 0)
+                    players = p;
+            }
+
+            bool genreMatch = genreAll || (game?.Genres != null && game.Genres.Any(g => string.Equals(g, genre, StringComparison.OrdinalIgnoreCase)));
+            bool controllerMatch = controllerAll || (game?.Controllers != null && game.Controllers.Any(c => string.Equals(c, controller, StringComparison.OrdinalIgnoreCase)));
+            bool playersMatch = playersAll || (game != null && game.Players == players);
+            return genreMatch && controllerMatch && playersMatch;
+        }
+
+        private void ApplyWiiUFilters()
+        {
+            if (dgGamesWiiU == null || _wiiuGames == null) return;
+            var view = CollectionViewSource.GetDefaultView(dgGamesWiiU.ItemsSource ?? _wiiuGames);
+            if (view == null) return;
+            view.Filter = obj => MatchesWiiUFilters(obj as GameInfo);
+            view.Refresh();
+            UpdateWiiUGameCount();
+        }
+
+        private void CmbWiiUFilter_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            ApplyWiiUFilters();
+        }
+
+        private void BtnWiiUFilterReset_Click(object sender, RoutedEventArgs e)
+        {
+            SelectComboByValue(cmbWiiUGenreFilter, "全部类别", "全部类别");
+            SelectComboByValue(cmbWiiUControllerFilter, "全部控制器", "全部控制器");
+            SelectComboByValue(cmbWiiUPlayersFilter, "全部人数", "全部人数");
+            ApplyWiiUFilters();
         }
 
         private void UpdateWiiUListStatus()
@@ -1575,7 +1906,70 @@ namespace U_Wii_X_Fusion
         {
             if (txtXboxGameCount == null) return;
             int n = _xboxGames?.Count ?? 0;
+            var view = dgGamesXbox != null ? CollectionViewSource.GetDefaultView(dgGamesXbox.ItemsSource) : null;
+            if (view != null)
+                n = view.Cast<object>().Count();
             txtXboxGameCount.Text = n > 0 ? $"共 {n} 款游戏" : "";
+        }
+
+        private void RefreshXboxFilterOptions()
+        {
+            if (cmbXboxCategoryFilter == null || _xboxGames == null) return;
+            string selectedCategory = GetComboDisplayValue(cmbXboxCategoryFilter) ?? "全部类型";
+
+            cmbXboxCategoryFilter.Items.Clear();
+            cmbXboxCategoryFilter.Items.Add(new ComboBoxItem { Content = "全部类型" });
+
+            var categories = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            try
+            {
+                foreach (var c in _xboxTitlesDatabase?.GetCategories() ?? new List<string>())
+                {
+                    if (!string.IsNullOrWhiteSpace(c)) categories.Add(c.Trim());
+                }
+            }
+            catch { }
+
+            foreach (var g in _xboxGames.Where(g => g != null))
+            {
+                if (g.Genres == null) continue;
+                foreach (var genre in g.Genres.Where(s => !string.IsNullOrWhiteSpace(s)))
+                    categories.Add(genre.Trim());
+            }
+
+            foreach (var c in categories.OrderBy(s => s))
+                cmbXboxCategoryFilter.Items.Add(new ComboBoxItem { Content = c });
+
+            SelectComboByValue(cmbXboxCategoryFilter, selectedCategory, "全部类型");
+        }
+
+        private bool MatchesXboxFilters(GameInfo game)
+        {
+            string category = GetComboDisplayValue(cmbXboxCategoryFilter);
+            bool all = string.IsNullOrWhiteSpace(category) || category == "全部类型";
+            if (all) return true;
+            return game?.Genres != null && game.Genres.Any(g => string.Equals(g, category, StringComparison.OrdinalIgnoreCase));
+        }
+
+        private void ApplyXboxFilters()
+        {
+            if (dgGamesXbox == null || _xboxGames == null) return;
+            var view = CollectionViewSource.GetDefaultView(dgGamesXbox.ItemsSource ?? _xboxGames);
+            if (view == null) return;
+            view.Filter = obj => MatchesXboxFilters(obj as GameInfo);
+            view.Refresh();
+            UpdateXboxGameCount();
+        }
+
+        private void CmbXboxFilter_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            ApplyXboxFilters();
+        }
+
+        private void BtnXboxFilterReset_Click(object sender, RoutedEventArgs e)
+        {
+            SelectComboByValue(cmbXboxCategoryFilter, "全部类型", "全部类型");
+            ApplyXboxFilters();
         }
 
         private void UpdateXboxListStatus()
@@ -1715,6 +2109,8 @@ namespace U_Wii_X_Fusion
                 }
 
                 dgGamesWiiU?.Items.Refresh();
+                RefreshWiiUFilterOptions();
+                ApplyWiiUFilters();
                 UpdateWiiUGameCount();
             }
             catch (Exception ex)
@@ -1897,23 +2293,110 @@ namespace U_Wii_X_Fusion
 
         private void BtnWiiUSelectAll_Click(object sender, RoutedEventArgs e)
         {
-            foreach (var g in _wiiuGames) g.IsSelected = true;
+            if (_wiiuGames == null) return;
+            foreach (var g in _wiiuGames.Where(x => x != null))
+                g.IsSelected = MatchesWiiUFilters(g);
             dgGamesWiiU?.Items.Refresh();
             UpdateWiiUListStatus();
         }
 
         private void BtnWiiUInvertSelect_Click(object sender, RoutedEventArgs e)
         {
-            foreach (var g in _wiiuGames) g.IsSelected = !g.IsSelected;
+            if (_wiiuGames == null) return;
+            foreach (var g in _wiiuGames.Where(x => x != null && MatchesWiiUFilters(x)))
+                g.IsSelected = !g.IsSelected;
             dgGamesWiiU?.Items.Refresh();
             UpdateWiiUListStatus();
         }
 
         private void BtnWiiUClearSelect_Click(object sender, RoutedEventArgs e)
         {
+            if (_wiiuGames == null) return;
             foreach (var g in _wiiuGames) g.IsSelected = false;
             dgGamesWiiU?.Items.Refresh();
             UpdateWiiUListStatus();
+        }
+
+        private void BtnWiiUSaveList_Click(object sender, RoutedEventArgs e)
+        {
+            var selected = _wiiuGames.Where(g => g.IsSelected).ToList();
+            var exportList = selected.Count > 0 ? selected : _wiiuGames;
+            if (exportList.Count == 0)
+            {
+                MessageBox.Show("当前没有可导出的 Wii U 游戏。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            var dlg = new SaveFileDialog
+            {
+                Filter = "文本文件 (*.txt)|*.txt|所有文件 (*.*)|*.*",
+                DefaultExt = "txt",
+                FileName = "WiiU_游戏列表.txt"
+            };
+            if (dlg.ShowDialog() != true) return;
+
+            try
+            {
+                var ids = exportList
+                    .Select(g => NormalizeGameId(g.GameId))
+                    .Where(id => !string.IsNullOrEmpty(id))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+                File.WriteAllLines(dlg.FileName, ids, Encoding.UTF8);
+                MessageBox.Show($"已导出 {ids.Count} 个 Wii U 游戏ID到：{dlg.FileName}", "导出列表", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"导出失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void BtnWiiULoadList_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new OpenFileDialog
+            {
+                Filter = "文本文件 (*.txt)|*.txt|所有文件 (*.*)|*.*",
+                DefaultExt = "txt"
+            };
+            if (dlg.ShowDialog() != true) return;
+
+            try
+            {
+                var ids = new HashSet<string>(
+                    File.ReadAllLines(dlg.FileName, Encoding.UTF8)
+                        .Select(NormalizeGameId)
+                        .Where(id => !string.IsNullOrEmpty(id)),
+                    StringComparer.OrdinalIgnoreCase);
+
+                _wiiuImportedListIds.Clear();
+                foreach (var id in ids) _wiiuImportedListIds.Add(id);
+
+                int matched = 0;
+                foreach (var game in _wiiuGames)
+                {
+                    bool hit = _wiiuImportedListIds.Contains(NormalizeGameId(game.GameId));
+                    game.IsSelected = hit;
+                    if (hit) matched++;
+                }
+
+                var duplicates = _wiiuGames
+                    .GroupBy(g => NormalizeGameId(g.GameId), StringComparer.OrdinalIgnoreCase)
+                    .Where(g => !string.IsNullOrEmpty(g.Key) && g.Count() > 1)
+                    .ToList();
+
+                dgGamesWiiU?.Items.Refresh();
+                UpdateWiiUListStatus();
+
+                MessageBox.Show(
+                    $"导入完成：文件中 {ids.Count} 个ID。\n匹配当前列表 {matched} 个。\n当前列表重复ID {duplicates.Count} 个。",
+                    "导入列表",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"导入失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void BtnWiiUList_Click(object sender, RoutedEventArgs e)
@@ -1929,6 +2412,8 @@ namespace U_Wii_X_Fusion
         {
             _wiiuGames?.Clear();
             dgGamesWiiU?.Items.Refresh();
+            RefreshWiiUFilterOptions();
+            ApplyWiiUFilters();
             UpdateWiiUGameCount();
             UpdateWiiUListStatus();
         }
@@ -1936,6 +2421,8 @@ namespace U_Wii_X_Fusion
         private void MenuWiiUListRefresh_Click(object sender, RoutedEventArgs e)
         {
             dgGamesWiiU?.Items.Refresh();
+            RefreshWiiUFilterOptions();
+            ApplyWiiUFilters();
             UpdateWiiUGameCount();
             UpdateWiiUListStatus();
         }
@@ -1950,6 +2437,8 @@ namespace U_Wii_X_Fusion
             }
             foreach (var g in toRemove) _wiiuGames.Remove(g);
             dgGamesWiiU?.Items.Refresh();
+            RefreshWiiUFilterOptions();
+            ApplyWiiUFilters();
             UpdateWiiUGameCount();
             UpdateWiiUListStatus();
         }
@@ -2007,6 +2496,7 @@ namespace U_Wii_X_Fusion
 
                 var addedBaseIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase); // 本轮已加入 toCopy 的 base titleId，用于去重
                 var toCopy = new List<GameInfo>();
+                int alreadyInstalledCount = 0;
                 foreach (var game in selected)
                 {
                     if (string.IsNullOrEmpty(game.Path)) continue;
@@ -2017,7 +2507,10 @@ namespace U_Wii_X_Fusion
                         bool allContentExists = contentFolders.Count > 0 && contentFolders.All(f =>
                             Directory.Exists(Path.Combine(installPath, Path.GetFileName(f.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)))));
                         if (allContentExists)
+                        {
+                            alreadyInstalledCount++;
                             continue;
+                        }
                         string titleId = GetTitleIdFromGamePath(game.Path);
                         if (!string.IsNullOrEmpty(titleId) && addedBaseIds.Contains(titleId.ToUpperInvariant()))
                             continue; // 同一游戏（相同 base）已在 toCopy 中，避免重复
@@ -2029,9 +2522,33 @@ namespace U_Wii_X_Fusion
                     {
                         string destFile = Path.Combine(installPath, Path.GetFileName(game.Path));
                         if (File.Exists(destFile))
+                        {
+                            alreadyInstalledCount++;
                             continue;
+                        }
                         toCopy.Add(game);
                     }
+                }
+
+                var duplicateIdGroups = selected
+                    .GroupBy(g => NormalizeGameId(g.GameId), StringComparer.OrdinalIgnoreCase)
+                    .Where(g => !string.IsNullOrEmpty(g.Key) && g.Count() > 1)
+                    .ToList();
+                int importedInstalledCount = _wiiuImportedListIds.Count == 0
+                    ? 0
+                    : selected.Count(g => _wiiuImportedListIds.Contains(NormalizeGameId(g.GameId)));
+
+                if (duplicateIdGroups.Count > 0 || alreadyInstalledCount > 0 || importedInstalledCount > 0)
+                {
+                    string warning =
+                        $"检测结果：\n" +
+                        $"- 选中总数: {selected.Count}\n" +
+                        $"- 重复游戏ID组: {duplicateIdGroups.Count}\n" +
+                        $"- 目标 install 已存在: {alreadyInstalledCount}\n" +
+                        $"- 命中“已安装导入列表”: {importedInstalledCount}\n\n" +
+                        "是否继续拷贝未安装的项目？";
+                    if (MessageBox.Show(warning, "复制前检查", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+                        return;
                 }
 
                 // 需占用空间：只统计本次将要拷贝的部分（已存在于 install 的文件夹不计入）
@@ -2251,6 +2768,8 @@ namespace U_Wii_X_Fusion
                 }
             }
             dgGamesXbox?.Items.Refresh();
+            RefreshXboxFilterOptions();
+            ApplyXboxFilters();
             UpdateXboxGameCount();
             UpdateXboxListStatus();
         }
@@ -2291,6 +2810,8 @@ namespace U_Wii_X_Fusion
                 // 2. 递归扫描 GOD/XEX 文件夹（文件夹名为 Title ID，或含 default.xex，或含 Content/$C/$T）
                 ScanXboxGameFolders(dir, dir, addedPaths);
                 dgGamesXbox?.Items.Refresh();
+                RefreshXboxFilterOptions();
+                ApplyXboxFilters();
                 UpdateXboxGameCount();
                 UpdateXboxListStatus();
             }
@@ -2332,6 +2853,8 @@ namespace U_Wii_X_Fusion
             {
                 if (!string.IsNullOrEmpty(entry.ChineseName)) game.ChineseTitle = entry.ChineseName;
                 if (!string.IsNullOrEmpty(entry.Name)) game.Title = entry.Name;
+                if (!string.IsNullOrWhiteSpace(entry.Category))
+                    game.Genres = new List<string> { entry.Category.Trim() };
             }
         }
 
@@ -2346,20 +2869,25 @@ namespace U_Wii_X_Fusion
 
         private void BtnXboxSelectAll_Click(object sender, RoutedEventArgs e)
         {
-            foreach (var g in _xboxGames) g.IsSelected = true;
+            if (_xboxGames == null) return;
+            foreach (var g in _xboxGames.Where(x => x != null))
+                g.IsSelected = MatchesXboxFilters(g);
             dgGamesXbox?.Items.Refresh();
             UpdateXboxListStatus();
         }
 
         private void BtnXboxInvertSelect_Click(object sender, RoutedEventArgs e)
         {
-            foreach (var g in _xboxGames) g.IsSelected = !g.IsSelected;
+            if (_xboxGames == null) return;
+            foreach (var g in _xboxGames.Where(x => x != null && MatchesXboxFilters(x)))
+                g.IsSelected = !g.IsSelected;
             dgGamesXbox?.Items.Refresh();
             UpdateXboxListStatus();
         }
 
         private void BtnXboxClearSelect_Click(object sender, RoutedEventArgs e)
         {
+            if (_xboxGames == null) return;
             foreach (var g in _xboxGames) g.IsSelected = false;
             dgGamesXbox?.Items.Refresh();
             UpdateXboxListStatus();
@@ -2375,6 +2903,8 @@ namespace U_Wii_X_Fusion
             }
             foreach (var g in toRemove) _xboxGames.Remove(g);
             dgGamesXbox?.Items.Refresh();
+            RefreshXboxFilterOptions();
+            ApplyXboxFilters();
             UpdateXboxGameCount();
             UpdateXboxListStatus();
         }
@@ -2392,6 +2922,8 @@ namespace U_Wii_X_Fusion
         {
             _xboxGames?.Clear();
             dgGamesXbox?.Items.Refresh();
+            RefreshXboxFilterOptions();
+            ApplyXboxFilters();
             UpdateXboxGameCount();
             UpdateXboxListStatus();
         }
@@ -2399,6 +2931,8 @@ namespace U_Wii_X_Fusion
         private void MenuXboxListRefresh_Click(object sender, RoutedEventArgs e)
         {
             dgGamesXbox?.Items.Refresh();
+            RefreshXboxFilterOptions();
+            ApplyXboxFilters();
             UpdateXboxGameCount();
             UpdateXboxListStatus();
         }
@@ -2429,7 +2963,7 @@ namespace U_Wii_X_Fusion
 
         private void BtnXboxGameQuery_Click(object sender, RoutedEventArgs e)
         {
-            var queryWindow = new Xbox360GameQueryWindow { Owner = this };
+            var queryWindow = new Xbox360GameQueryWindow(_xboxCoverPath) { Owner = this };
             ShowMainWindowToTray("U-Wii-X Fusion（Xbox 360 游戏查询中）");
             queryWindow.ShowDialog();
             RestoreMainWindowFromTray();
@@ -2464,11 +2998,14 @@ namespace U_Wii_X_Fusion
             string chineseName = game.ChineseTitle ?? "";
             var dlg = new Xbox360AddToDbDialog(titleId, name, chineseName) { Owner = this };
             if (dlg.ShowDialog() != true) return;
-            _xboxTitlesDatabase?.AddOrUpdate(dlg.TitleId, dlg.Name, dlg.ChineseName);
+            _xboxTitlesDatabase?.AddOrUpdate(dlg.TitleId, dlg.GameName, dlg.ChineseName);
             if (!string.IsNullOrEmpty(dlg.ChineseName)) game.ChineseTitle = dlg.ChineseName;
-            if (!string.IsNullOrEmpty(dlg.Name)) game.Title = dlg.Name;
+            if (!string.IsNullOrEmpty(dlg.GameName)) game.Title = dlg.GameName;
             if (!string.IsNullOrEmpty(dlg.TitleId)) game.GameId = dlg.TitleId;
+            EnrichXboxGameFromDatabase(game);
             dgGamesXbox?.Items.Refresh();
+            RefreshXboxFilterOptions();
+            ApplyXboxFilters();
             MessageBox.Show("已添加到 Xbox 360 游戏数据库。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 

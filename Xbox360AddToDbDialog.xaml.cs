@@ -5,7 +5,7 @@ namespace U_Wii_X_Fusion
     public partial class Xbox360AddToDbDialog : Window
     {
         public string TitleId => txtTitleId?.Text?.Trim() ?? "";
-        public string Name => txtName?.Text?.Trim() ?? "";
+        public string GameName => txtName?.Text?.Trim() ?? "";
         public string ChineseName => txtChineseName?.Text?.Trim() ?? "";
 
         public Xbox360AddToDbDialog(string titleId, string name, string chineseName)
