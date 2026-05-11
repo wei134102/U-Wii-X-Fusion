@@ -213,45 +213,127 @@ namespace U_Wii_X_Fusion.Core.Update
         /// <summary>下载更新包到临时目录</summary>
         public async Task<string> DownloadUpdateAsync(string downloadUrl, IProgress<int> progress = null)
         {
-            // 下载到程序目录下的 CACHE，便于统一管理与清理
             string cacheDir = GetCacheDir();
             string updateDir = Path.Combine(cacheDir, "update");
             if (Directory.Exists(updateDir))
-                Directory.Delete(updateDir, true);
+            {
+                try { Directory.Delete(updateDir, true); } catch { }
+            }
             Directory.CreateDirectory(updateDir);
 
             string zipPath = Path.Combine(updateDir, "update.zip");
-            using (var client = new WebClient())
+            string tempPath = zipPath + ".tmp";
+
+            try
             {
-                client.Headers.Add("User-Agent", "U-Wii-X-Fusion-Updater");
-                client.Headers.Add(HttpRequestHeader.Accept, "application/octet-stream");
-
-                // 私有仓库/提高限流：如果填写了 Token，则带上 Authorization
-                var settings = SettingsManager.GetSettings();
-                if (!string.IsNullOrWhiteSpace(settings?.ApiKey))
+                using (var client = new WebClient())
                 {
-                    var token = settings.ApiKey.Trim();
-                    client.Headers.Add(HttpRequestHeader.Authorization, "Bearer " + token);
+                    client.Headers.Add("User-Agent", "U-Wii-X-Fusion-Updater");
+                    client.Headers.Add(HttpRequestHeader.Accept, "application/octet-stream");
+
+                    var settings = SettingsManager.GetSettings();
+                    if (!string.IsNullOrWhiteSpace(settings?.ApiKey))
+                    {
+                        var token = settings.ApiKey.Trim();
+                        client.Headers.Add(HttpRequestHeader.Authorization, "Bearer " + token);
+                    }
+
+                    if (progress != null)
+                        client.DownloadProgressChanged += (s, e) => progress.Report(e.ProgressPercentage);
+
+                    await client.DownloadFileTaskAsync(new Uri(downloadUrl), tempPath);
                 }
 
-                if (progress != null)
-                {
-                    client.DownloadProgressChanged += (s, e) => progress.Report(e.ProgressPercentage);
-                }
-                await client.DownloadFileTaskAsync(new Uri(downloadUrl), zipPath);
+                if (!File.Exists(tempPath) || new FileInfo(tempPath).Length == 0)
+                    throw new InvalidOperationException("下载未产生有效文件，请检查网络或稍后重试。");
+
+                ValidateZipFile(tempPath);
+
+                if (File.Exists(zipPath)) File.Delete(zipPath);
+                File.Move(tempPath, zipPath);
+                return zipPath;
             }
-            return zipPath;
+            catch (WebException webEx)
+            {
+                TryDelete(tempPath);
+                var msg = webEx.Message;
+                if (webEx.Response is HttpWebResponse resp)
+                {
+                    if (resp.StatusCode == HttpStatusCode.NotFound)
+                        msg = "下载地址不存在(404)，请确认该版本 Release 仍存在。";
+                    else if ((int)resp.StatusCode == 403)
+                        msg = "下载被拒绝(403)，可能是限流或权限不足，请稍后重试或在设置中配置 GitHub Token。";
+                }
+                throw new Exception("下载失败: " + msg, webEx);
+            }
+            catch (InvalidOperationException)
+            {
+                TryDelete(tempPath);
+                throw;
+            }
+        }
+
+        /// <summary>校验文件是否为有效 ZIP（避免解压时出现“找不到中央目录结尾记录”）</summary>
+        private static void ValidateZipFile(string path)
+        {
+            const int ZipLocalHeader = 0x04034b50;
+            const int ZipEocdSignature = 0x06054b50;
+            const int MaxCommentAndEocd = 65557;
+
+            if (string.IsNullOrEmpty(path) || !File.Exists(path))
+                throw new InvalidOperationException("更新包文件不存在。");
+
+            long length = new FileInfo(path).Length;
+            if (length < 22)
+                throw new InvalidOperationException("更新包过小，可能下载不完整或服务器返回了错误页。请重试或从 Releases 页面手动下载。");
+
+            byte[] head = new byte[4];
+            using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+            {
+                if (fs.Read(head, 0, 4) != 4)
+                    throw new InvalidOperationException("无法读取更新包头部。");
+                int sig = BitConverter.ToInt32(head, 0);
+                if (sig != ZipLocalHeader && sig != 0x06054b50 && sig != 0x08074b50)
+                    throw new InvalidOperationException("更新包不是有效的 ZIP 格式（可能为错误页或损坏）。请检查网络后重试，或从 Releases 页面手动下载。");
+
+                long toRead = Math.Min(length, MaxCommentAndEocd);
+                if (toRead < 22) return;
+                fs.Seek(length - toRead, SeekOrigin.Begin);
+                byte[] tail = new byte[toRead];
+                if (fs.Read(tail, 0, (int)toRead) != (int)toRead)
+                    throw new InvalidOperationException("无法读取更新包尾部。");
+                bool found = false;
+                for (int i = tail.Length - 22; i >= 0; i--)
+                {
+                    if (i + 4 <= tail.Length && BitConverter.ToInt32(tail, i) == ZipEocdSignature)
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found)
+                    throw new InvalidOperationException("更新包缺少 ZIP 中央目录结尾，可能下载不完整。请重试或从 Releases 页面手动下载。");
+            }
         }
 
         /// <summary>解压更新包到临时目录</summary>
         public string ExtractUpdate(string zipPath)
         {
-            // 解压到 CACHE\update\extracted
+            ValidateZipFile(zipPath);
             string extractDir = Path.Combine(Path.GetDirectoryName(zipPath), "extracted");
             if (Directory.Exists(extractDir))
-                Directory.Delete(extractDir, true);
+            {
+                try { Directory.Delete(extractDir, true); } catch { }
+            }
             Directory.CreateDirectory(extractDir);
-            ZipFile.ExtractToDirectory(zipPath, extractDir);
+            try
+            {
+                ZipFile.ExtractToDirectory(zipPath, extractDir);
+            }
+            catch (InvalidDataException ex)
+            {
+                throw new InvalidOperationException("解压更新包失败（文件可能损坏或不完整）：" + ex.Message, ex);
+            }
             return extractDir;
         }
 
@@ -370,6 +452,11 @@ del ""%~f0""
         private static string GetCacheDir()
         {
             return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CACHE");
+        }
+
+        private static void TryDelete(string path)
+        {
+            try { if (!string.IsNullOrEmpty(path) && File.Exists(path)) File.Delete(path); } catch { }
         }
     }
 

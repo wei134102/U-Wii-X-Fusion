@@ -134,6 +134,11 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="WiiPluginEditorWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Compile Include="AppLanguage.cs" />
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -170,6 +175,13 @@
       <DependentUpon>AuroraDatabaseWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="WiiPluginEditorWindow.xaml.cs">
+      <DependentUpon>WiiPluginEditorWindow.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="IniHelper.cs" />
+    <Compile Include="VistaFolderPicker.cs" />
+    <Compile Include="WiiPluginEditorModels.cs" />
     <!-- Core 目录 -->
     <Compile Include="Core\GameIdentification\GameIdentifier.cs" />
     <Compile Include="Core\GameIdentification\WiiGameIdentifier.cs" />
@@ -182,6 +194,7 @@
     <Compile Include="Core\Models\GameInfo.cs" />
     <Compile Include="Core\Xbox360CoverDownloader.cs" />
     <Compile Include="Core\Xbox360FtpOperations.cs" />
+    <Compile Include="Core\WiiCoverDownloader.cs" />
     <!-- Database 目录 -->
     <Compile Include="Database\Interfaces\IGameDatabase.cs" />
     <Compile Include="Database\Local\LocalGameDatabase.cs" />

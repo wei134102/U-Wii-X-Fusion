@@ -26,62 +26,76 @@
                         <TextBlock Text="U-Wii-X Fusion" FontSize="16" FontWeight="Bold" Foreground="White" Margin="0,0,10,0"/>
                         <TextBlock x:Name="txtHeaderVersion" Text="v0.0.0.0" FontSize="12" Foreground="#BDC3C7" VerticalAlignment="Bottom"/>
                     </StackPanel>
-                    <TextBlock Text="多合一游戏管理工具 | by：B站:86年复古游戏厅" FontSize="12" Foreground="#BDC3C7"/>
+                    <TextBlock x:Name="txtHeaderSubtitle" Text="多合一游戏管理工具 | by：B站:86年复古游戏厅" FontSize="12" Foreground="#BDC3C7"/>
                 </StackPanel>
-                <Button Grid.Column="1" x:Name="btnCheckUpdate" Content="检查更新" Padding="8,4" Background="#3498DB" Foreground="White" BorderThickness="0" Cursor="Hand" Click="BtnCheckUpdate_Click"/>
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <Button x:Name="btnLanguage" Content="English" Padding="8,4" Margin="0,0,8,0" Background="#9B59B6" Foreground="White" BorderThickness="0" Cursor="Hand" Click="BtnLanguage_Click" ToolTip="切换界面语言 / Switch UI language"/>
+                    <Button x:Name="btnCheckUpdate" Content="检查更新" Padding="8,4" Background="#3498DB" Foreground="White" BorderThickness="0" Cursor="Hand" Click="BtnCheckUpdate_Click"/>
+                </StackPanel>
             </Grid>
         </Border>
         
         <!-- 主内容区 -->
         <TabControl Grid.Row="1" Margin="0" TabStripPlacement="Left">
             <!-- 设置标签页 -->
-            <TabItem Header="设置">
+            <TabItem x:Name="tabSettings" Header="设置">
                 <Grid Background="#F5F5F5">
                     <StackPanel Margin="10">
-                        <TextBlock Text="设置" FontSize="18" FontWeight="Bold" Margin="0,0,0,20"/>
-                        <Expander Header="通用设置" IsExpanded="True" Margin="0,0,0,10">
+                        <TextBlock x:Name="txtSettingsTitle" Text="设置" FontSize="18" FontWeight="Bold" Margin="0,0,0,20"/>
+                        <Expander x:Name="expGeneral" Header="通用设置" IsExpanded="True" Margin="0,0,0,10">
                             <StackPanel Margin="10,0,0,0">
                                 <CheckBox x:Name="chkAutoUpdate" Content="启用自动更新" Margin="0,5,0,0"/>
                                 <CheckBox x:Name="chkEnableLogging" Content="启用日志记录" Margin="0,5,0,0"/>
                                 <CheckBox x:Name="chkCheckDevices" Content="启动时检查设备" Margin="0,5,0,0"/>
                             </StackPanel>
                         </Expander>
-                        <Expander Header="路径设置" Margin="0,0,0,10">
+                        <Expander x:Name="expPath" Header="路径设置" Margin="0,0,0,10">
                             <StackPanel Margin="10,0,0,0">
                                 <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
-                                    <TextBlock Text="游戏存储路径:" Width="120" VerticalAlignment="Center"/>
+                                    <TextBlock x:Name="lblGamePath" Text="游戏存储路径:" Width="120" VerticalAlignment="Center"/>
                                     <TextBox x:Name="txtGamePath" Width="300" Margin="0,0,10,0"/>
                                     <Button x:Name="btnBrowseGamePath" Content="浏览..."/>
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
-                                    <TextBlock Text="数据库路径:" Width="120" VerticalAlignment="Center"/>
+                                    <TextBlock x:Name="lblDatabasePath" Text="数据库路径:" Width="120" VerticalAlignment="Center"/>
                                     <TextBox x:Name="txtDatabasePath" Width="300" Margin="0,0,10,0"/>
                                     <Button x:Name="btnBrowseDatabasePath" Content="浏览..."/>
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
-                                    <TextBlock Text="封面存储路径:" Width="120" VerticalAlignment="Center"/>
+                                    <TextBlock x:Name="lblCoverPath" Text="封面存储路径:" Width="120" VerticalAlignment="Center"/>
                                     <TextBox x:Name="txtCoverPath" Width="300" Margin="0,0,10,0"/>
                                     <Button x:Name="btnBrowseCoverPath" Content="浏览..."/>
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
-                                    <TextBlock Text="Wii U 封面路径:" Width="120" VerticalAlignment="Center"/>
+                                    <TextBlock x:Name="lblWiiUCoverPath" Text="Wii U 封面路径:" Width="120" VerticalAlignment="Center"/>
                                     <TextBox x:Name="txtWiiUCoverPath" Width="300" Margin="0,0,10,0"/>
                                     <Button x:Name="btnBrowseWiiUCoverPath" Content="浏览..."/>
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
-                                    <TextBlock Text="Xbox 360 封面路径:" Width="120" VerticalAlignment="Center"/>
+                                    <TextBlock x:Name="lblXboxCoverPath" Text="Xbox 360 封面路径:" Width="120" VerticalAlignment="Center"/>
                                     <TextBox x:Name="txtXboxCoverPath" Width="300" Margin="0,0,10,0"/>
                                     <Button x:Name="btnBrowseXboxCoverPath" Content="浏览..."/>
                                 </StackPanel>
                             </StackPanel>
                         </Expander>
-                        <Expander Header="网络设置" Margin="0,0,0,10">
+                        <Expander x:Name="expNetwork" Header="网络设置" Margin="0,0,0,10">
                             <StackPanel Margin="10,0,0,0">
                                 <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
-                                    <TextBlock Text="元数据API密钥:" Width="120" VerticalAlignment="Center"/>
+                                    <TextBlock x:Name="lblApiKey" Text="元数据API密钥:" Width="120" VerticalAlignment="Center"/>
                                     <TextBox x:Name="txtApiKey" Width="300"/>
                                 </StackPanel>
                                 <CheckBox x:Name="chkEnableProxy" Content="启用代理" Margin="0,5,0,0"/>
+                            </StackPanel>
+                        </Expander>
+                        <Expander x:Name="expCoverDownload" Header="封面下载设置" Margin="0,0,0,10" IsExpanded="True">
+                            <StackPanel Margin="10,0,0,0">
+                                <TextBlock Text="Wii / Wii U 从 GameTDB 下载哪些类型的封面：" FontSize="12" Margin="0,0,0,6"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
+                                    <CheckBox x:Name="chkCover2D" Content="2D 封面" Margin="0,0,15,0"/>
+                                    <CheckBox x:Name="chkCover3D" Content="3D 封面" Margin="0,0,15,0"/>
+                                    <CheckBox x:Name="chkCoverDisc" Content="Disc 封面" Margin="0,0,15,0"/>
+                                    <CheckBox x:Name="chkCoverFull" Content="Full 封面" Margin="0,0,15,0"/>
+                                </StackPanel>
                             </StackPanel>
                         </Expander>
                         <Button x:Name="btnSaveSettings" Content="保存设置" Width="100" Height="30" Margin="0,20,0,0" Click="BtnSaveSettings_Click"/>
@@ -90,7 +104,7 @@
             </TabItem>
             
             <!-- Wii标签页 -->
-            <TabItem Header="WII">
+            <TabItem x:Name="tabWii" Header="WII">
                 <Grid Background="#F5F5F5">
                     <Grid Margin="10">
                         <Grid.ColumnDefinitions>
@@ -107,7 +121,7 @@
                                 <RowDefinition Height="*"/>     <!-- 列表 + 控制器/信息 -->
                             </Grid.RowDefinitions>
 
-                            <TextBlock Grid.Row="0" Text="Wii / NGC 游戏管理" FontSize="18" FontWeight="Bold" Margin="0,0,0,15"/>
+                            <TextBlock Grid.Row="0" x:Name="txtWiiSectionTitle" Text="Wii / NGC 游戏管理" FontSize="18" FontWeight="Bold" Margin="0,0,0,15"/>
                             
                             <!-- 游戏列表来源切换：目录 / 磁盘1 / 磁盘2（右侧对齐） -->
                             <Grid Grid.Row="1" Margin="0,0,0,4">
@@ -183,6 +197,7 @@
                                         </ContextMenu>
                                     </Button.ContextMenu>
                                 </Button>
+                                <Button x:Name="btnWiiDownloadCovers" Content="下载封面" Width="80" Padding="6,3" Margin="0,0,6,0" Click="BtnWiiDownloadCovers_Click"/>
                             </StackPanel>
                             <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
                                 <Button x:Name="btnListSourceDirectory" Content="目录" Width="60" Margin="0,0,6,0" Padding="4,2" Click="BtnListSourceDirectory_Click"/>
@@ -198,6 +213,7 @@
                                 </Button>
                                 <Button x:Name="btnRenameGames" Content="游戏重命名" Padding="8,4" Margin="0,0,0,0" ToolTip="将选中游戏按“中文名 [ID]\\ID.扩展名”规则重命名并整理到文件夹" Click="BtnRenameGames_Click"/>
                                 <Button x:Name="btnGameQuery" Content="Wii游戏数据库查询" Padding="8,4" Margin="8,0,0,0" Click="BtnGameQuery_Click"/>
+                                <Button x:Name="btnWiiPluginEditor" Content="WII插件编辑器" Width="110" Padding="6,3" Margin="8,0,0,0" ToolTip="打开 Wii 插件配置管理器" Click="BtnWiiPluginEditor_Click"/>
                             </StackPanel>
                             </Grid>
 
@@ -280,13 +296,13 @@
                                     <RowDefinition Height="*"/>
                                 </Grid.RowDefinitions>
 
-                                <GroupBox Header="Disc 封面" FontSize="12" Margin="0,0,0,4">
+                                <GroupBox x:Name="gbDiscCoverWii" Header="Disc 封面" FontSize="12" Margin="0,0,0,4">
                                     <Border Background="#F5F5F5" Padding="4">
                                         <Image x:Name="imgDiscCover" Stretch="Uniform" />
                                     </Border>
                                 </GroupBox>
 
-                                <GroupBox Header="3D 封面" Grid.Row="1" FontSize="12" Margin="0,4,0,0">
+                                <GroupBox x:Name="gb3DCoverWii" Header="3D 封面" Grid.Row="1" FontSize="12" Margin="0,4,0,0">
                                     <Border Background="#F5F5F5" Padding="4">
                                         <Image x:Name="img3DCover" Stretch="Uniform" />
                                     </Border>
@@ -298,7 +314,7 @@
             </TabItem>
             
             <!-- Wii U标签页：布局与 WII 一致，游戏列表 + 封面预览 + 游戏详情 -->
-            <TabItem Header="WIIU">
+            <TabItem x:Name="tabWiiU" Header="WIIU">
                 <Grid Background="#F5F5F5">
                     <Grid Margin="10">
                         <Grid.ColumnDefinitions>
@@ -315,7 +331,7 @@
                                 <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
 
-                            <TextBlock Grid.Row="0" Text="Wii U 游戏管理" FontSize="18" FontWeight="Bold" Margin="0,0,0,15"/>
+                            <TextBlock Grid.Row="0" x:Name="txtWiiUSectionTitle" Text="Wii U 游戏管理" FontSize="18" FontWeight="Bold" Margin="0,0,0,15"/>
 
                             <Grid Grid.Row="1" Margin="0,0,0,4">
                                 <Grid.ColumnDefinitions>
@@ -377,6 +393,7 @@
                                             </ContextMenu>
                                         </Button.ContextMenu>
                                     </Button>
+                                    <Button x:Name="btnWiiUDownloadCovers" Content="下载封面" Width="80" Padding="6,3" Margin="0,0,6,0" Click="BtnWiiUDownloadCovers_Click"/>
                                 </StackPanel>
                             </Grid>
 
@@ -447,12 +464,12 @@
                                     <RowDefinition Height="*"/>
                                     <RowDefinition Height="*"/>
                                 </Grid.RowDefinitions>
-                                <GroupBox Header="Disc 封面" FontSize="12" Margin="0,0,0,4">
-                                    <Border Background="#F5F5F5" Padding="4">
-                                        <Image x:Name="imgDiscCoverWiiU" Stretch="Uniform"/>
-                                    </Border>
-                                </GroupBox>
-                                <GroupBox Header="3D 封面" Grid.Row="1" FontSize="12" Margin="0,4,0,0">
+<GroupBox x:Name="gbDiscCoverWiiU" Header="Disc 封面" FontSize="12" Margin="0,0,0,4">
+                                        <Border Background="#F5F5F5" Padding="4">
+                                            <Image x:Name="imgDiscCoverWiiU" Stretch="Uniform"/>
+                                        </Border>
+                                    </GroupBox>
+                                <GroupBox x:Name="gb3DCoverWiiU" Header="3D 封面" Grid.Row="1" FontSize="12" Margin="0,4,0,0">
                                     <Border Background="#F5F5F5" Padding="4">
                                         <Image x:Name="img3DCoverWiiU" Stretch="Uniform"/>
                                     </Border>
@@ -464,7 +481,7 @@
             </TabItem>
             
             <!-- Xbox 360 标签页：布局参考 Wii U -->
-            <TabItem Header="XBOX">
+            <TabItem x:Name="tabXbox" Header="XBOX">
                 <Grid Background="#F5F5F5">
                     <Grid Margin="10">
                         <Grid.ColumnDefinitions>
@@ -481,7 +498,7 @@
                                 <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
 
-                            <TextBlock Grid.Row="0" Text="Xbox 360 游戏管理" FontSize="18" FontWeight="Bold" Margin="0,0,0,15"/>
+                            <TextBlock Grid.Row="0" x:Name="txtXboxSectionTitle" Text="Xbox 360 游戏管理" FontSize="18" FontWeight="Bold" Margin="0,0,0,15"/>
 
                             <Grid Grid.Row="1" Margin="0,0,0,4">
                                 <Grid.ColumnDefinitions>
@@ -606,12 +623,12 @@
                                     <RowDefinition Height="*"/>
                                     <RowDefinition Height="*"/>
                                 </Grid.RowDefinitions>
-                                <GroupBox Header="封面" FontSize="12" Margin="0,0,0,4">
+                                <GroupBox x:Name="gbCoverXbox" Header="封面" FontSize="12" Margin="0,0,0,4">
                                     <Border Background="#F5F5F5" Padding="4">
                                         <Image x:Name="imgCoverXbox" Stretch="Uniform"/>
                                     </Border>
                                 </GroupBox>
-                                <GroupBox Header="状态" Grid.Row="1" FontSize="12" Margin="0,4,0,0">
+                                <GroupBox x:Name="gbStatusXbox" Header="状态" Grid.Row="1" FontSize="12" Margin="0,4,0,0">
                                     <StackPanel>
                                         <TextBlock x:Name="txtXboxStatus" Text="选中游戏显示详情" FontSize="12" Foreground="#666" TextWrapping="Wrap" Margin="4,4,4,4"/>
                                         <ProgressBar x:Name="progressXboxCover" Height="8" Margin="4,0,4,4" Minimum="0" Maximum="100" Value="0" Visibility="Collapsed"/>

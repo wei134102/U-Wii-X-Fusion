@@ -10,6 +10,17 @@ namespace U_Wii_X_Fusion.Core.Settings
         public bool AutoUpdate { get; set; } = true;
         public bool EnableLogging { get; set; } = false;
         public bool CheckDevices { get; set; } = true;
+        /// <summary>使用英文界面（false=中文，true=英文）</summary>
+        public bool UseEnglish { get; set; } = false;
+
+        /// <summary>Wii 封面下载：2D 封面（cover）</summary>
+        public bool DownloadWiiCover2D { get; set; } = true;
+        /// <summary>Wii / Wii U 封面下载：3D 封面（cover3D）</summary>
+        public bool DownloadWiiCover3D { get; set; } = true;
+        /// <summary>Wii / Wii U 封面下载：Disc 封面（disc）</summary>
+        public bool DownloadWiiDiscCover { get; set; } = true;
+        /// <summary>Wii 封面下载：Full 封面（coverfull）</summary>
+        public bool DownloadWiiFullCover { get; set; } = true;
 
         // 路径设置
         public string GamePath { get; set; } = string.Empty;
@@ -23,6 +34,15 @@ namespace U_Wii_X_Fusion.Core.Settings
         public string LastScanPath { get; set; } = string.Empty;
         /// <summary>Xbox 360 游戏目录（如 E:\roms\xbox360\X360K）</summary>
         public string LastXboxScanPath { get; set; } = @"E:\roms\xbox360\X360K";
+
+        /// <summary>WII 插件编辑器：上次使用的插件目录</summary>
+        public string LastPluginEditorPluginsDir { get; set; } = string.Empty;
+        /// <summary>WII 插件编辑器：上次使用的 ROM 目录</summary>
+        public string LastPluginEditorRomsDir { get; set; } = string.Empty;
+        /// <summary>WII 插件编辑器：上次使用的图片目录</summary>
+        public string LastPluginEditorImagesDir { get; set; } = string.Empty;
+        /// <summary>WII 插件编辑器：上次使用的自定义标题文件路径</summary>
+        public string LastPluginEditorTitlesFile { get; set; } = string.Empty;
 
         // 网络设置
         public string ApiKey { get; set; } = string.Empty;
