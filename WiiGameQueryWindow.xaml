@@ -89,10 +89,25 @@
                 <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8">
                     <TextBlock Text="游戏列表" FontSize="14" FontWeight="Bold" VerticalAlignment="Center"/>
                     <TextBlock x:Name="txtGameCount" Text="" FontSize="12" Foreground="#666" Margin="12,0,0,0" VerticalAlignment="Center"/>
+                    <Button x:Name="btnQuerySelect" Content="选择" Width="70" Padding="6,3" Margin="16,0,0,0" VerticalAlignment="Center"
+                            Click="BtnQuerySelect_Click" ToolTip="全选 / 反选 / 取消选择">
+                        <Button.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Header="全选" Click="MenuQuerySelectAll_Click"/>
+                                <MenuItem Header="反选" Click="MenuQueryInvertSelect_Click"/>
+                                <MenuItem Header="取消选择" Click="MenuQueryClearSelect_Click"/>
+                            </ContextMenu>
+                        </Button.ContextMenu>
+                    </Button>
+                    <Button x:Name="btnQueryExportList" Content="导出列表" Width="80" Padding="6,3" Margin="8,0,0,0" VerticalAlignment="Center"
+                            Click="BtnQueryExportList_Click" ToolTip="导出勾选的游戏ID；未勾选时导出当前列表全部"/>
                 </StackPanel>
                 <DataGrid x:Name="dgGames" Grid.Row="1" AutoGenerateColumns="False" MinHeight="280" Background="White"
-                          GridLinesVisibility="Horizontal" HeadersVisibility="Column">
+                          GridLinesVisibility="Horizontal" HeadersVisibility="Column"
+                          SelectionMode="Extended" SelectionUnit="FullRow" CanUserAddRows="False"
+                          LoadingRow="DgGames_LoadingRow" UnloadingRow="DgGames_UnloadingRow">
                     <DataGrid.Columns>
+                        <DataGridCheckBoxColumn Header="选" Width="40" Binding="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                         <DataGridTextColumn Header="游戏ID" Width="100" Binding="{Binding GameId}"/>
                         <DataGridTextColumn Header="游戏名称" Width="*" Binding="{Binding Title}"/>
                         <DataGridTextColumn Header="中文名称" Width="150" Binding="{Binding ChineseTitle}"/>

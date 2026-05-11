@@ -1,12 +1,15 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using Microsoft.Win32;
 using U_Wii_X_Fusion.Core.Models;
 using U_Wii_X_Fusion.Database.Local;
 
@@ -63,6 +66,27 @@ namespace U_Wii_X_Fusion
             btnApplyFilters.Click += BtnApplyFilters_Click;
             cmbCoverType.SelectionChanged += CmbCoverType_SelectionChanged;
             dgGames.SelectionChanged += DgGames_SelectionChanged;
+        }
+
+        private void DgGames_LoadingRow(object sender, DataGridRowEventArgs e)
+        {
+            if (e.Row.Item is GameInfo g)
+            {
+                g.PropertyChanged -= GameInfo_IsSelectedChanged;
+                g.PropertyChanged += GameInfo_IsSelectedChanged;
+            }
+        }
+
+        private void DgGames_UnloadingRow(object sender, DataGridRowEventArgs e)
+        {
+            if (e.Row.Item is GameInfo g)
+                g.PropertyChanged -= GameInfo_IsSelectedChanged;
+        }
+
+        private void GameInfo_IsSelectedChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(GameInfo.IsSelected))
+                UpdateGameCount();
         }
 
         private void PopulateGenreComboBox()
@@ -201,7 +225,107 @@ namespace U_Wii_X_Fusion
                 count = col.Count;
             else if (dgGames?.ItemsSource is IEnumerable en)
                 count = en.Cast<object>().Count();
-            txtGameCount.Text = $"共 {count} 个游戏";
+            int sel = GetDisplayedGames().Count(g => g != null && g.IsSelected);
+            txtGameCount.Text = sel > 0 ? $"共 {count} 个游戏，已选 {sel} 个" : $"共 {count} 个游戏";
+        }
+
+        /// <summary>当前列表（搜索+筛选后的数据源）</summary>
+        private List<GameInfo> GetDisplayedGames()
+        {
+            if (dgGames?.ItemsSource == null) return new List<GameInfo>();
+            if (dgGames.ItemsSource is List<GameInfo> list) return list;
+            return dgGames.ItemsSource.Cast<GameInfo>().Where(g => g != null).ToList();
+        }
+
+        private void CommitGridEdits()
+        {
+            if (dgGames == null) return;
+            try
+            {
+                dgGames.CommitEdit(DataGridEditingUnit.Cell, true);
+                dgGames.CommitEdit(DataGridEditingUnit.Row, true);
+            }
+            catch { /* ignore */ }
+        }
+
+        private void BtnQuerySelect_Click(object sender, RoutedEventArgs e)
+        {
+            if (btnQuerySelect?.ContextMenu != null)
+            {
+                btnQuerySelect.ContextMenu.PlacementTarget = btnQuerySelect;
+                btnQuerySelect.ContextMenu.IsOpen = true;
+            }
+        }
+
+        private void MenuQuerySelectAll_Click(object sender, RoutedEventArgs e)
+        {
+            foreach (var g in GetDisplayedGames())
+                g.IsSelected = true;
+            dgGames?.Items.Refresh();
+            UpdateGameCount();
+        }
+
+        private void MenuQueryInvertSelect_Click(object sender, RoutedEventArgs e)
+        {
+            foreach (var g in GetDisplayedGames())
+                g.IsSelected = !g.IsSelected;
+            dgGames?.Items.Refresh();
+            UpdateGameCount();
+        }
+
+        private void MenuQueryClearSelect_Click(object sender, RoutedEventArgs e)
+        {
+            foreach (var g in GetDisplayedGames())
+                g.IsSelected = false;
+            dgGames?.Items.Refresh();
+            UpdateGameCount();
+        }
+
+        private void BtnQueryExportList_Click(object sender, RoutedEventArgs e)
+        {
+            CommitGridEdits();
+            var displayed = GetDisplayedGames();
+            if (displayed.Count == 0)
+            {
+                MessageBox.Show("当前没有可导出的游戏。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            var selected = displayed.Where(g => g.IsSelected).ToList();
+            List<GameInfo> exportList = selected;
+            if (selected.Count == 0)
+            {
+                var r = MessageBox.Show(
+                    $"未勾选任何游戏。是否导出当前列表中的全部 {displayed.Count} 个游戏ID？",
+                    "导出列表",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Question);
+                if (r != MessageBoxResult.Yes) return;
+                exportList = displayed;
+            }
+
+            var dlg = new SaveFileDialog
+            {
+                Filter = "文本文件 (*.txt)|*.txt|所有文件 (*.*)|*.*",
+                DefaultExt = "txt",
+                FileName = "Wii游戏ID列表.txt"
+            };
+            if (dlg.ShowDialog() != true) return;
+
+            try
+            {
+                var ids = exportList
+                    .Select(g => (g.GameId ?? "").Trim())
+                    .Where(id => !string.IsNullOrEmpty(id))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+                File.WriteAllLines(dlg.FileName, ids, Encoding.UTF8);
+                MessageBox.Show($"已导出 {ids.Count} 个游戏ID到：{dlg.FileName}", "导出列表", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"导出失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void DgGames_SelectionChanged(object sender, SelectionChangedEventArgs e)
