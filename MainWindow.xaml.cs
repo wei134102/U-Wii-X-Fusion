@@ -2334,6 +2334,65 @@ namespace U_Wii_X_Fusion
             UpdateWiiUListStatus();
         }
 
+        /// <summary>导出勾选游戏的 16 位 Title ID，每行一个，供 install/ID.txt 与 WUP Installer 使用。</summary>
+        private void BtnWiiUExportSelectedTitleIds_Click(object sender, RoutedEventArgs e)
+        {
+            if (_wiiuGames == null || _wiiuGames.Count == 0)
+            {
+                MessageBox.Show("当前没有 Wii U 游戏列表。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            var selected = _wiiuGames.Where(g => g != null && g.IsSelected).ToList();
+            if (selected.Count == 0)
+            {
+                MessageBox.Show("请先勾选要导出的游戏。", "导出 TITLEID", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            var ids = new List<string>();
+            var skipped = new List<string>();
+            foreach (var game in selected)
+            {
+                string titleId = GetTitleIdFromGamePath(game.Path);
+                if (string.IsNullOrEmpty(titleId))
+                {
+                    skipped.Add(string.IsNullOrEmpty(game.Title) ? game.Path : game.Title);
+                    continue;
+                }
+                ids.Add(titleId.ToUpperInvariant());
+            }
+
+            ids = ids.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+            if (ids.Count == 0)
+            {
+                MessageBox.Show("所选游戏均无法从 title.tmd 读取 Title ID。", "导出 TITLEID", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            var dlg = new SaveFileDialog
+            {
+                Filter = "ID 列表 (ID.txt)|ID.txt|文本文件 (*.txt)|*.txt|所有文件 (*.*)|*.*",
+                DefaultExt = "txt",
+                FileName = "ID.txt"
+            };
+            if (dlg.ShowDialog() != true) return;
+
+            try
+            {
+                File.WriteAllLines(dlg.FileName, ids, Encoding.UTF8);
+                string msg = $"已导出 {ids.Count} 个 Title ID 到：\n{dlg.FileName}";
+                if (skipped.Count > 0)
+                    msg += $"\n\n跳过 {skipped.Count} 项（无 title.tmd）：\n" + string.Join("\n", skipped.Take(5)) +
+                           (skipped.Count > 5 ? "\n..." : "");
+                MessageBox.Show(msg, "导出 TITLEID", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"导出失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
         private void BtnWiiUSaveList_Click(object sender, RoutedEventArgs e)
         {
             var selected = _wiiuGames.Where(g => g.IsSelected).ToList();

@@ -242,7 +242,7 @@
                                         <DataGridTextColumn Header="游戏ID" Width="100" Binding="{Binding GameId}"/>
                                         <DataGridTextColumn Header="游戏名称" Width="*" MinWidth="120" Binding="{Binding Title}"/>
                                         <DataGridTextColumn Header="中文名称" Width="*" MinWidth="120" Binding="{Binding ChineseTitle}"/>
-                                        <DataGridTextColumn Header="大小" Width="90" Binding="{Binding FormattedSize}" SortMemberPath="Size"/>
+                                        <DataGridTextColumn Header="大小" Width="90" IsReadOnly="True" Binding="{Binding FormattedSize, Mode=OneWay}" SortMemberPath="Size"/>
                                         <DataGridTextColumn Header="平台" Width="60" Binding="{Binding Platform}"/>
                                         <DataGridTextColumn Header="格式" Width="50" Binding="{Binding Format}"/>
                                         <DataGridTextColumn Header="路径" Width="200" Binding="{Binding Path}" Visibility="Collapsed"/>
@@ -378,6 +378,7 @@
                                                 <MenuItem Header="反选" Click="BtnWiiUInvertSelect_Click"/>
                                                 <MenuItem Header="取消选择" Click="BtnWiiUClearSelect_Click"/>
                                                 <Separator/>
+                                                <MenuItem Header="导出所选 TITLEID (ID.txt)" Click="BtnWiiUExportSelectedTitleIds_Click"/>
                                                 <MenuItem Header="导出列表" Click="BtnWiiUSaveList_Click"/>
                                                 <MenuItem Header="导入列表" Click="BtnWiiULoadList_Click"/>
                                             </ContextMenu>
@@ -418,8 +419,8 @@
                                         <DataGridTextColumn Header="TITLEID" Width="100" Binding="{Binding GameId}"/>
                                         <DataGridTextColumn Header="游戏名称" Width="*" MinWidth="120" Binding="{Binding Title}"/>
                                         <DataGridTextColumn Header="中文名称" Width="*" MinWidth="120" Binding="{Binding ChineseTitle}"/>
-                                        <DataGridTextColumn Header="大小" Width="90" Binding="{Binding FormattedSize}" SortMemberPath="Size"/>
-                                        <DataGridTextColumn Header="文件夹" Width="120" Binding="{Binding ParentFolderName}"/>
+                                        <DataGridTextColumn Header="大小" Width="90" IsReadOnly="True" Binding="{Binding FormattedSize, Mode=OneWay}" SortMemberPath="Size"/>
+                                        <DataGridTextColumn Header="文件夹" Width="120" IsReadOnly="True" Binding="{Binding ParentFolderName, Mode=OneWay}"/>
                                         <DataGridTextColumn Header="路径" Width="200" Binding="{Binding Path}" Visibility="Collapsed"/>
                                     </DataGrid.Columns>
                                 </DataGrid>
@@ -577,7 +578,7 @@
                                         <DataGridTextColumn Header="游戏ID" Width="100" Binding="{Binding GameId}"/>
                                         <DataGridTextColumn Header="游戏名称" Width="*" MinWidth="120" Binding="{Binding Title}"/>
                                         <DataGridTextColumn Header="中文名称" Width="*" MinWidth="120" Binding="{Binding ChineseTitle}"/>
-                                        <DataGridTextColumn Header="大小" Width="90" Binding="{Binding FormattedSize}" SortMemberPath="Size"/>
+                                        <DataGridTextColumn Header="大小" Width="90" IsReadOnly="True" Binding="{Binding FormattedSize, Mode=OneWay}" SortMemberPath="Size"/>
                                         <DataGridTextColumn Header="格式" Width="60" Binding="{Binding Format}"/>
                                         <DataGridTextColumn Header="路径" Width="200" Binding="{Binding Path}" Visibility="Collapsed"/>
                                     </DataGrid.Columns>

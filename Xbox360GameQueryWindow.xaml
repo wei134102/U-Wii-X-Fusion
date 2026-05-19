@@ -52,7 +52,7 @@
                         <DataGridTextColumn Header="游戏ID" Width="100" Binding="{Binding GameId}"/>
                         <DataGridTextColumn Header="游戏名称" Width="*" Binding="{Binding Title}"/>
                         <DataGridTextColumn Header="中文名称" Width="120" Binding="{Binding ChineseTitle}"/>
-                        <DataGridTextColumn Header="分类" Width="80" Binding="{Binding Category}"/>
+                        <DataGridTextColumn Header="分类" Width="80" IsReadOnly="True" Binding="{Binding Category, Mode=OneWay}"/>
                     </DataGrid.Columns>
                 </DataGrid>
             </Grid>
