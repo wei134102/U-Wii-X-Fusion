@@ -2570,12 +2570,57 @@ namespace U_Wii_X_Fusion
                 if (string.IsNullOrEmpty(root))
                     return;
 
+                bool skipConsoleInstalled = false;
+                HashSet<string> consoleInstalledTitleIds = null;
+                string idInstalledPath = IdInstalledTxtReader.GetInstallFilePath(installPath);
+                if (File.Exists(idInstalledPath))
+                {
+                    consoleInstalledTitleIds = IdInstalledTxtReader.LoadInstalledBaseTitleIds(idInstalledPath);
+                }
+                if (consoleInstalledTitleIds != null && consoleInstalledTitleIds.Count > 0)
+                {
+                    string idPrompt = AppLanguage.L(
+                        $"检测到 install 目录下存在 {IdInstalledTxtReader.FileName}（WUP Installer 提取的已安装游戏列表，共 {consoleInstalledTitleIds.Count} 个 Title ID）。\n\n" +
+                        "是否跳过主机上已安装的游戏？\n\n" +
+                        "• 是：不拷贝列表中已在主机安装的游戏\n" +
+                        "• 否：照常拷贝（仅根据 install 文件夹是否已存在判断）\n" +
+                        "• 取消：放弃本次拷贝",
+                        $"Found {IdInstalledTxtReader.FileName} under install ({consoleInstalledTitleIds.Count} Title IDs from WUP Installer).\n\n" +
+                        "Skip games already installed on the console?\n\n" +
+                        "• Yes: do not copy games listed as installed\n" +
+                        "• No: copy as usual (only skip if folder already exists in install)\n" +
+                        "• Cancel: abort this copy");
+                    var idChoice = MessageBox.Show(
+                        idPrompt,
+                        AppLanguage.L("已安装游戏检测", "Installed games"),
+                        MessageBoxButton.YesNoCancel,
+                        MessageBoxImage.Question);
+                    if (idChoice == MessageBoxResult.Cancel)
+                        return;
+                    if (idChoice == MessageBoxResult.Yes)
+                        skipConsoleInstalled = true;
+                }
+                else
+                {
+                    consoleInstalledTitleIds = null;
+                }
+
                 var addedBaseIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase); // 本轮已加入 toCopy 的 base titleId，用于去重
                 var toCopy = new List<GameInfo>();
                 int alreadyInstalledCount = 0;
+                int skippedByIdInstalledCount = 0;
                 foreach (var game in selected)
                 {
                     if (string.IsNullOrEmpty(game.Path)) continue;
+
+                    if (skipConsoleInstalled && consoleInstalledTitleIds != null && consoleInstalledTitleIds.Count > 0
+                        && TryGetWiiUBaseTitleIdFromGame(game, out string baseTitleId)
+                        && IdInstalledTxtReader.IsBaseTitleInstalled(consoleInstalledTitleIds, baseTitleId))
+                    {
+                        skippedByIdInstalledCount++;
+                        continue;
+                    }
+
                     if (Directory.Exists(game.Path))
                     {
                         // 仅当该游戏的本体+DLC+升级档在 install 中全部存在时才跳过；任一部分缺失则加入 toCopy 用于补全
@@ -2588,11 +2633,12 @@ namespace U_Wii_X_Fusion
                             continue;
                         }
                         string titleId = GetTitleIdFromGamePath(game.Path);
-                        if (!string.IsNullOrEmpty(titleId) && addedBaseIds.Contains(titleId.ToUpperInvariant()))
+                        string baseKey = string.IsNullOrEmpty(titleId) ? null : WiiUTitleTmdReader.GetBaseTitleId(titleId).ToUpperInvariant();
+                        if (!string.IsNullOrEmpty(baseKey) && addedBaseIds.Contains(baseKey))
                             continue; // 同一游戏（相同 base）已在 toCopy 中，避免重复
                         toCopy.Add(game);
-                        if (!string.IsNullOrEmpty(titleId))
-                            addedBaseIds.Add(titleId.ToUpperInvariant());
+                        if (!string.IsNullOrEmpty(baseKey))
+                            addedBaseIds.Add(baseKey);
                     }
                     else if (File.Exists(game.Path))
                     {
@@ -2663,10 +2709,22 @@ namespace U_Wii_X_Fusion
                 string sizeStr = FormatSize(sizeToCopy);
                 string freeStr = FormatSize(freeSpace);
                 int skipCount = selected.Count - toCopy.Count;
-                string msg = $"选中 {selected.Count} 个游戏，已存在跳过 {skipCount} 个，待拷贝 {toCopy.Count} 个，需占用 {sizeStr}。\n目标分区可用空间：{freeStr}。";
+                string msg = AppLanguage.L(
+                    $"选中 {selected.Count} 个游戏，已跳过 {skipCount} 个，待拷贝 {toCopy.Count} 个，需占用 {sizeStr}。\n目标分区可用空间：{freeStr}。",
+                    $"Selected {selected.Count}, skipped {skipCount}, to copy {toCopy.Count}, need {sizeStr}.\nFree space on target: {freeStr}.");
+                if (skippedByIdInstalledCount > 0)
+                {
+                    msg += AppLanguage.L(
+                        $"\n（其中主机 id_installed 已安装跳过 {skippedByIdInstalledCount} 个）",
+                        $"\n({skippedByIdInstalledCount} skipped as installed on console per id_installed.txt)");
+                }
                 if (toCopy.Count == 0)
                 {
-                    MessageBox.Show("所选游戏在目标 install 中均已存在，无需拷贝。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+                    MessageBox.Show(
+                        AppLanguage.L("所选游戏均已存在或已在主机安装，无需拷贝。", "All selected games already exist or are installed on the console; nothing to copy."),
+                        AppLanguage.L("提示", "Notice"),
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
                     return;
                 }
                 if (freeSpace > 0 && sizeToCopy > freeSpace)
@@ -2737,6 +2795,33 @@ namespace U_Wii_X_Fusion
             if (File.Exists(tmd) && WiiUTitleTmdReader.TryReadTitleId(tmd, out id))
                 return id;
             return null;
+        }
+
+        /// <summary>从 WUP 文件夹 title.tmd 或 16 位 GameId 得到本体 Title ID（00050000xxxxxxxx）。</summary>
+        private static bool TryGetWiiUBaseTitleIdFromGame(GameInfo game, out string baseTitleId)
+        {
+            baseTitleId = null;
+            if (game == null || string.IsNullOrEmpty(game.Path))
+                return false;
+
+            if (Directory.Exists(game.Path))
+            {
+                string titleId = GetTitleIdFromGamePath(game.Path);
+                if (!string.IsNullOrEmpty(titleId))
+                {
+                    baseTitleId = WiiUTitleTmdReader.GetBaseTitleId(titleId).ToUpperInvariant();
+                    return true;
+                }
+            }
+
+            string gid = NormalizeGameId(game.GameId);
+            if (gid.Length == 16 && gid.StartsWith("0005", StringComparison.OrdinalIgnoreCase))
+            {
+                baseTitleId = WiiUTitleTmdReader.GetBaseTitleId(gid).ToUpperInvariant();
+                return true;
+            }
+
+            return false;
         }
 
         /// <summary>收集同一游戏的本体 + DLC + 升级档文件夹（与扫描时分组规则一致：相同后 8 位 Title ID）。</summary>
