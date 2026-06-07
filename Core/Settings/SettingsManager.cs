@@ -43,6 +43,8 @@ namespace U_Wii_X_Fusion.Core.Settings
         public string LastPluginEditorImagesDir { get; set; } = string.Empty;
         /// <summary>WII 插件编辑器：上次使用的自定义标题文件路径</summary>
         public string LastPluginEditorTitlesFile { get; set; } = string.Empty;
+        /// <summary>上次导出 Wii 封面使用的目录</summary>
+        public string LastCoverExportPath { get; set; } = string.Empty;
 
         // 网络设置
         public string ApiKey { get; set; } = string.Empty;

@@ -1611,6 +1611,47 @@ namespace U_Wii_X_Fusion
             }
         }
 
+        private void BtnExportSelectedCovers_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                dgGames.CommitEdit(DataGridEditingUnit.Cell, true);
+                dgGames.CommitEdit(DataGridEditingUnit.Row, true);
+            }
+            catch { /* ignore */ }
+
+            var selected = _scannedGames.Where(g => g.IsSelected).ToList();
+            if (selected.Count == 0)
+            {
+                MessageBox.Show(
+                    AppLanguage.L("没有勾选任何游戏。请先勾选要导出封面的项。", "No games checked. Please check games to export covers."),
+                    AppLanguage.L("提示", "Notice"),
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+                return;
+            }
+
+            if (string.IsNullOrEmpty(_coverPath))
+            {
+                MessageBox.Show(
+                    AppLanguage.L("请先在设置中设置封面存储路径。", "Please set the cover storage path in Settings first."),
+                    AppLanguage.L("提示", "Notice"),
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+                return;
+            }
+
+            string exportDir = WiiCoverExporter.PickExportDirectory(this);
+            if (string.IsNullOrEmpty(exportDir)) return;
+
+            var ids = selected
+                .Select(g => g.GameId)
+                .Where(id => !string.IsNullOrWhiteSpace(id))
+                .ToList();
+            var result = WiiCoverExporter.ExportCovers(ids, _coverPath, exportDir);
+            WiiCoverExporter.ShowResultMessage(result);
+        }
+
         private void BtnRemoveSelected_Click(object sender, RoutedEventArgs e)
         {
             // 确保 DataGrid 内的勾选状态已提交（否则可能出现“刚勾选就点删除但未生效”）
@@ -3807,6 +3848,7 @@ namespace U_Wii_X_Fusion
                     LastPluginEditorRomsDir = current.LastPluginEditorRomsDir,
                     LastPluginEditorImagesDir = current.LastPluginEditorImagesDir,
                     LastPluginEditorTitlesFile = current.LastPluginEditorTitlesFile,
+                    LastCoverExportPath = current.LastCoverExportPath,
 
                     // 网络设置
                     ApiKey = txtApiKey.Text,

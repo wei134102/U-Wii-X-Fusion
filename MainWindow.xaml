@@ -182,6 +182,7 @@
                                             <Separator/>
                                             <MenuItem Header="导出列表" Click="BtnSaveList_Click"/>
                                             <MenuItem Header="导入列表" Click="BtnLoadList_Click"/>
+                                            <MenuItem Header="导出所选封面" Click="BtnExportSelectedCovers_Click"/>
                                         </ContextMenu>
                                     </Button.ContextMenu>
                                 </Button>

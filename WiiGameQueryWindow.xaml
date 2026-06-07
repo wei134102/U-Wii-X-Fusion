@@ -96,6 +96,8 @@
                                 <MenuItem Header="全选" Click="MenuQuerySelectAll_Click"/>
                                 <MenuItem Header="反选" Click="MenuQueryInvertSelect_Click"/>
                                 <MenuItem Header="取消选择" Click="MenuQueryClearSelect_Click"/>
+                                <Separator/>
+                                <MenuItem Header="导出所选封面" Click="BtnQueryExportCovers_Click"/>
                             </ContextMenu>
                         </Button.ContextMenu>
                     </Button>

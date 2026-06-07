@@ -10,6 +10,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Microsoft.Win32;
+using U_Wii_X_Fusion.Core;
 using U_Wii_X_Fusion.Core.Models;
 using U_Wii_X_Fusion.Database.Local;
 
@@ -326,6 +327,33 @@ namespace U_Wii_X_Fusion
             {
                 MessageBox.Show($"导出失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+
+        private void BtnQueryExportCovers_Click(object sender, RoutedEventArgs e)
+        {
+            CommitGridEdits();
+            var selected = GetDisplayedGames().Where(g => g != null && g.IsSelected).ToList();
+            if (selected.Count == 0)
+            {
+                MessageBox.Show("没有勾选任何游戏。请先勾选要导出封面的项。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            if (string.IsNullOrEmpty(_coverPath))
+            {
+                MessageBox.Show("请先在设置中设置封面存储路径。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            string exportDir = WiiCoverExporter.PickExportDirectory(this);
+            if (string.IsNullOrEmpty(exportDir)) return;
+
+            var ids = selected
+                .Select(g => g.GameId)
+                .Where(id => !string.IsNullOrWhiteSpace(id))
+                .ToList();
+            var result = WiiCoverExporter.ExportCovers(ids, _coverPath, exportDir);
+            WiiCoverExporter.ShowResultMessage(result);
         }
 
         private void DgGames_SelectionChanged(object sender, SelectionChangedEventArgs e)
