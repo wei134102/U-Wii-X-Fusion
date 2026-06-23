@@ -53,6 +53,8 @@ namespace U_Wii_X_Fusion
                 PopulateGenreComboBox();
                 PopulatePlatformComboBox();
                 PopulateControllerComboBox();
+                PopulateOnlineFeaturesComboBox();
+                PopulateAccessoriesComboBox();
             }
             catch (Exception ex)
             {
@@ -141,6 +143,48 @@ namespace U_Wii_X_Fusion
             }
         }
 
+        private void PopulateOnlineFeaturesComboBox()
+        {
+            var features = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var game in _allGames)
+            {
+                if (game.OnlineFeatures != null)
+                {
+                    foreach (var f in game.OnlineFeatures)
+                    {
+                        if (!string.IsNullOrWhiteSpace(f))
+                            features.Add(f);
+                    }
+                }
+            }
+            foreach (var f in features.OrderBy(x => x))
+            {
+                cmbOnlineFeatures.Items.Add(f);
+            }
+        }
+
+        private void PopulateAccessoriesComboBox()
+        {
+            // 配件与控制器共用数据来源（Controllers），但排除 wiimote 等基础手柄，只显示额外配件
+            var accessories = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var baseControls = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "wiimote", "nunchuk", "gamecube" };
+            foreach (var game in _allGames)
+            {
+                if (game.Controllers != null)
+                {
+                    foreach (var c in game.Controllers)
+                    {
+                        if (!string.IsNullOrWhiteSpace(c) && !baseControls.Contains(c.ToLower()))
+                            accessories.Add(c);
+                    }
+                }
+            }
+            foreach (var a in accessories.OrderBy(x => x))
+            {
+                cmbAccessories.Items.Add(a);
+            }
+        }
+
         private void BtnSearch_Click(object sender, RoutedEventArgs e)
         {
             try { RefreshList(); }
@@ -167,13 +211,15 @@ namespace U_Wii_X_Fusion
         }
 
         /// <summary>获取当前筛选条件（与界面下拉框一致）</summary>
-        private void GetCurrentFilter(out string genre, out string platformType, out int? players, out string controller, out string region)
+        private void GetCurrentFilter(out string genre, out string platformType, out int? players, out string controller, out string region, out string onlineFeatures, out string accessories)
         {
             genre = GetFilterComboValue(cmbGenre);
             platformType = GetFilterComboValue(cmbPlatform);
             string playersText = GetFilterComboValue(cmbPlayers);
             controller = GetFilterComboValue(cmbController);
             region = GetFilterComboValue(cmbRegion);
+            onlineFeatures = GetFilterComboValue(cmbOnlineFeatures);
+            accessories = GetFilterComboValue(cmbAccessories);
 
             if (genre == "全部游戏类型") genre = null;
             if (platformType == "全部平台") platformType = null;
@@ -186,6 +232,8 @@ namespace U_Wii_X_Fusion
             }
             if (controller == "全部控制器") controller = null;
             if (region == "全部区域") region = null;
+            if (onlineFeatures == "全部在线功能") onlineFeatures = null;
+            if (accessories == "全部配件") accessories = null;
         }
 
         /// <summary>先按搜索框得到基础列表，再应用当前筛选条件，使搜索与筛选同时生效</summary>
@@ -196,7 +244,7 @@ namespace U_Wii_X_Fusion
                 ? _allGames
                 : _wiiDatabase.SearchGames(query);
 
-            GetCurrentFilter(out string genre, out string platformType, out int? players, out string controller, out string region);
+            GetCurrentFilter(out string genre, out string platformType, out int? players, out string controller, out string region, out string onlineFeatures, out string accessories);
 
             var filtered = _wiiDatabase.FilterGameList(baseList,
                 genre: genre,
@@ -204,7 +252,9 @@ namespace U_Wii_X_Fusion
                 controller: controller,
                 region: region,
                 platformType: platformType,
-                players: players);
+                players: players,
+                onlineFeatures: onlineFeatures,
+                accessories: accessories);
 
             dgGames.ItemsSource = filtered;
             UpdateGameCount();

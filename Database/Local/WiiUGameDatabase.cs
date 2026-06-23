@@ -210,7 +210,7 @@ namespace U_Wii_X_Fusion.Database.Local
         }
 
         public List<GameInfo> FilterGames(string genre = null, string language = null, string controller = null,
-            string region = null, string platformType = null, int? players = null)
+            string region = null, string platformType = null, int? players = null, string onlineFeatures = null, string accessories = null)
         {
             var q = _games.AsEnumerable();
             if (!string.IsNullOrEmpty(genre) && genre != "全部游戏类型")
@@ -225,13 +225,23 @@ namespace U_Wii_X_Fusion.Database.Local
                 q = q.Where(g => string.Equals(g.PlatformType, platformType, StringComparison.OrdinalIgnoreCase));
             if (players.HasValue && players.Value > 0)
                 q = q.Where(g => g.Players >= players.Value);
+            if (!string.IsNullOrEmpty(onlineFeatures) && onlineFeatures != "全部在线功能")
+            {
+                var ofLower = onlineFeatures.ToLower();
+                q = q.Where(g => g.OnlineFeatures != null && g.OnlineFeatures.Any(o => string.Equals(o, ofLower, StringComparison.OrdinalIgnoreCase)));
+            }
+            if (!string.IsNullOrEmpty(accessories) && accessories != "全部配件")
+            {
+                var accLower = accessories.ToLower();
+                q = q.Where(g => g.Controllers != null && g.Controllers.Any(c => string.Equals(c, accLower, StringComparison.OrdinalIgnoreCase)));
+            }
             return q.ToList();
         }
 
         /// <summary>对指定列表应用与 FilterGames 相同的筛选条件，便于与搜索结果组合使用</summary>
         public List<GameInfo> FilterGameList(IEnumerable<GameInfo> source,
             string genre = null, string language = null, string controller = null,
-            string region = null, string platformType = null, int? players = null)
+            string region = null, string platformType = null, int? players = null, string onlineFeatures = null, string accessories = null)
         {
             if (source == null) return new List<GameInfo>();
             var filtered = source.AsEnumerable();
@@ -258,6 +268,16 @@ namespace U_Wii_X_Fusion.Database.Local
                 filtered = filtered.Where(g => string.Equals(g.PlatformType, platformType, StringComparison.OrdinalIgnoreCase));
             if (players.HasValue && players.Value > 0)
                 filtered = filtered.Where(g => g.Players >= players.Value);
+            if (!string.IsNullOrEmpty(onlineFeatures) && onlineFeatures != "全部在线功能")
+            {
+                var ofLower = onlineFeatures.ToLower();
+                filtered = filtered.Where(g => g.OnlineFeatures != null && g.OnlineFeatures.Any(o => string.Equals(o, ofLower, StringComparison.OrdinalIgnoreCase)));
+            }
+            if (!string.IsNullOrEmpty(accessories) && accessories != "全部配件")
+            {
+                var accLower = accessories.ToLower();
+                filtered = filtered.Where(g => g.Controllers != null && g.Controllers.Any(c => string.Equals(c, accLower, StringComparison.OrdinalIgnoreCase)));
+            }
             return filtered.ToList();
         }
 

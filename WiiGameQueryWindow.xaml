@@ -68,6 +68,20 @@
                             <ComboBoxItem>NTSC-J</ComboBoxItem>
                         </ComboBox>
                     </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,20,0">
+                        <TextBlock Text="在线功能: " Margin="0,0,5,0" VerticalAlignment="Center"/>
+                        <ComboBox x:Name="cmbOnlineFeatures" Width="130">
+                            <ComboBoxItem>全部在线功能</ComboBoxItem>
+                            <!-- 动态填充 -->
+                        </ComboBox>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,20,0">
+                        <TextBlock Text="配件: " Margin="0,0,5,0" VerticalAlignment="Center"/>
+                        <ComboBox x:Name="cmbAccessories" Width="130">
+                            <ComboBoxItem>全部配件</ComboBoxItem>
+                            <!-- 动态填充 -->
+                        </ComboBox>
+                    </StackPanel>
                     <Button x:Name="btnApplyFilters" Content="应用筛选" Width="100"/>
                 </WrapPanel>
             </StackPanel>

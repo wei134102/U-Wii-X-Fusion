@@ -78,12 +78,15 @@ namespace U_Wii_X_Fusion.Core.Models
         /// <summary>分类/类型（如 Shooter、Action），用于 Xbox 360 等，取自 Genres 或 Category 字段</summary>
         public string Category => Genres != null && Genres.Count > 0 ? string.Join(", ", Genres) : "";
         public List<string> Languages { get; set; }
+        /// <summary>在线功能（来自 wiitdb.xml 的 wi-fi/feature，如 online、download、score、nintendods、wiimmfi）</summary>
+        public List<string> OnlineFeatures { get; set; }
 
         public GameInfo()
         {
             Controllers = new List<string>();
             Genres = new List<string>();
             Languages = new List<string>();
+            OnlineFeatures = new List<string>();
         }
     }
 }

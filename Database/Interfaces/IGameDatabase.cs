@@ -15,6 +15,6 @@ namespace U_Wii_X_Fusion.Database.Interfaces
         List<GameInfo> GetGamesByPlatform(string platform);
         List<GameInfo> SearchGames(string query);
         List<GameInfo> FilterGames(string genre = null, string language = null, string controller = null, 
-            string region = null, string platformType = null, int? players = null);
+            string region = null, string platformType = null, int? players = null, string onlineFeatures = null, string accessories = null);
     }
 }
