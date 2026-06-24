@@ -27,6 +27,24 @@ jobs:
     - name: Restore NuGet packages
       run: nuget restore "U-Wii-X Fusion.sln"
       
+    - name: Update Assembly Version
+      if: github.event_name == 'workflow_dispatch'
+      shell: powershell
+      run: |
+        $version = "${{ github.event.inputs.version }}"
+        # 移除 'v' 或 'V' 前缀
+        $version = $version -replace '^[vV]', ''
+        Write-Host "Setting assembly version to: $version"
+        
+        # Update AssemblyInfo.cs
+        $assemblyInfoPath = "Properties\AssemblyInfo.cs"
+        $content = Get-Content $assemblyInfoPath -Raw
+        $content = $content -replace '\[assembly: AssemblyVersion\(".*"\)\]', "[assembly: AssemblyVersion(`"$version`")]"
+        $content = $content -replace '\[assembly: AssemblyFileVersion\(".*"\)\]', "[assembly: AssemblyFileVersion(`"$version`")]"
+        Set-Content $assemblyInfoPath -Value $content -NoNewline
+        
+        Write-Host "Assembly version updated successfully"
+      
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v1.1
       
