@@ -379,72 +379,26 @@ namespace U_Wii_X_Fusion.Core.Update
         {
             string cacheDir = GetCacheDir();
             if (!Directory.Exists(cacheDir)) Directory.CreateDirectory(cacheDir);
-            string scriptPath = Path.Combine(cacheDir, "apply_update.bat");
-            string logPath = Path.Combine(cacheDir, "update.log");
-
-            // 转义路径中的特殊字符，确保批处理脚本正确执行
-            string escapedExtract = extractedDir.Replace("\"", "\"\"");
-            string escapedTarget = targetDir.Replace("\"", "\"\"");
-            string escapedExe = exePath.Replace("\"", "\"\"");
-            string escapedCache = cacheDir.Replace("\"", "\"\"");
-            string escapedLog = logPath.Replace("\"", "\"\"");
             
-            string script = $@"@echo off
-chcp 65001 >nul
-setlocal enableextensions
-set ""EXTRACT_DIR={escapedExtract}""
-set ""TARGET_DIR={escapedTarget}""
-set ""EXE_PATH={escapedExe}""
-set ""CACHE_DIR={escapedCache}""
-set ""LOG_PATH={escapedLog}""
-set PID={currentPid}
-
-echo [%%date%% %%time%%] start update script > ""%LOG_PATH%""
-echo EXTRACT_DIR=%EXTRACT_DIR%>> ""%LOG_PATH%""
-echo TARGET_DIR=%TARGET_DIR%>> ""%LOG_PATH%""
-echo PID=%PID%>> ""%LOG_PATH%""
-
-REM 等待主程序退出，避免 exe/dll 被占用导致拷贝失败
-:wait_exit
-tasklist /FI ""PID eq %PID%"" | findstr /R /C:""^ *%PID% "" >nul
-if not errorlevel 1 (
-  timeout /t 1 /nobreak >nul
-  goto wait_exit
-)
-
-echo [%%date%% %%time%%] process exited, copying...>> ""%LOG_PATH%""
-
-REM 用 robocopy 更稳定，并排除用户数据目录
-robocopy ""%EXTRACT_DIR%"" ""%TARGET_DIR%"" /E /R:3 /W:1 /XD ""Data"" ""CONFIG"" /XF ""settings.json"" ""*.log"" >> ""%LOG_PATH%""
-set RC=%%errorlevel%%
-REM robocopy 返回码 0-7 都视为成功；>=8 失败
-if %RC% GEQ 8 (
-  echo [%%date%% %%time%%] copy failed, robocopy errorlevel=%RC%>> ""%LOG_PATH%""
-  exit /b 1
-)
-
-echo [%%date%% %%time%%] copy ok, restarting...>> ""%LOG_PATH%""
-start """" ""%EXE_PATH%""
-
-REM 清理 CACHE（按你的要求：更新完毕后删除 CACHE）
-REM 注意：当前脚本位于 CACHE 中，不能直接 rmdir 自己；改为启动一个临时清理脚本
-set ""CLEANUP=%TEMP%\\U-Wii-X-Fusion-Cleanup.bat""
-echo @echo off> ""%CLEANUP%""
-echo chcp 65001 ^>nul>> ""%CLEANUP%""
-echo timeout /t 2 /nobreak ^>nul>> ""%CLEANUP%""
-echo if exist """"%CACHE_DIR%"""" rmdir /s /q """"%CACHE_DIR%"""" ^>nul 2^>nul>> ""%CLEANUP%""
-echo del """"%%~f0"""" ^>nul 2^>nul>> ""%CLEANUP%""
-start """" /min cmd.exe /c """"%CLEANUP%""""
-
-del ""%~f0""
-";
-            File.WriteAllText(scriptPath, script, Encoding.UTF8);
-            // 用 cmd.exe 执行 bat（避免直接启动 bat 时窗口/执行策略异常）
-            var psi = new ProcessStartInfo("cmd.exe", "/c \"" + scriptPath + "\"")
+            // Copy patcher.exe to cache directory
+            string patcherSource = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Patcher.exe");
+            string patcherDest = Path.Combine(cacheDir, "Patcher.exe");
+            
+            if (File.Exists(patcherSource))
+            {
+                File.Copy(patcherSource, patcherDest, overwrite: true);
+            }
+            else
+            {
+                throw new FileNotFoundException("Patcher.exe not found in application directory", patcherSource);
+            }
+            
+            // Launch patcher.exe with arguments
+            var psi = new ProcessStartInfo(patcherDest)
             {
                 UseShellExecute = false,
                 CreateNoWindow = true,
-                WorkingDirectory = cacheDir
+                Arguments = $"\"{extractedDir}\" \"{targetDir}\" \"{exePath}\" {currentPid}"
             };
             Process.Start(psi);
         }
