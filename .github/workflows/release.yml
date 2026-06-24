@@ -20,6 +20,8 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
       
     - name: Setup NuGet
       uses: NuGet/setup-nuget@v1
@@ -28,10 +30,13 @@ jobs:
       run: nuget restore "U-Wii-X Fusion.sln"
       
     - name: Update Assembly Version
-      if: github.event_name == 'workflow_dispatch'
       shell: powershell
       run: |
-        $version = "${{ github.event.inputs.version }}"
+        # 获取版本号：优先使用 release 标签，否则使用手动输入的版本
+        $version = "${{ github.event.release.tag_name }}"
+        if (-not $version -or $version -eq "") {
+          $version = "${{ github.event.inputs.version }}"
+        }
         # 移除 'v' 或 'V' 前缀
         $version = $version -replace '^[vV]', ''
         Write-Host "Setting assembly version to: $version"
@@ -44,6 +49,16 @@ jobs:
         Set-Content $assemblyInfoPath -Value $content -NoNewline
         
         Write-Host "Assembly version updated successfully"
+        
+    - name: Commit Assembly Version Update
+      if: github.event_name == 'workflow_dispatch'
+      shell: powershell
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        git add "Properties\AssemblyInfo.cs"
+        git commit -m "Update assembly version to ${{ github.event.inputs.version }}"
+        git push
       
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v1.1
