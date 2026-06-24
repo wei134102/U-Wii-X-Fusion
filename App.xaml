@@ -622,7 +622,7 @@
                 <Setter Property="Background" Value="{StaticResource CardBg}"/>
                 <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
                 <Setter Property="BorderThickness" Value="1"/>
-                <Setter Property="FontSize" Value="12"/>
+                <Setter Property="FontSize" Value="14"/>
                 <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
                 <Setter Property="Padding" Value="4,6"/>
                 <Setter Property="Template">
@@ -642,15 +642,18 @@
             <Style TargetType="MenuItem">
                 <Setter Property="Background" Value="Transparent"/>
                 <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
-                <Setter Property="Padding" Value="20,4"/>
-                <Setter Property="FontSize" Value="12"/>
+                <Setter Property="Padding" Value="24,8"/>
+                <Setter Property="FontSize" Value="14"/>
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="MenuItem">
                             <Border x:Name="Border" Background="{TemplateBinding Background}"
-                                    BorderThickness="0" CornerRadius="2" Margin="1,0">
-                                <ContentPresenter ContentSource="{TemplateBinding Header}"
-                                                  VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
+                                    BorderThickness="0" CornerRadius="2" Margin="1,0" MinHeight="32">
+                                <Grid>
+                                    <ContentPresenter ContentSource="Header"
+                                                  VerticalAlignment="Center" Margin="{TemplateBinding Padding}"
+                                                  RecognizesAccessKey="True"/>
+                                </Grid>
                             </Border>
                             <ControlTemplate.Triggers>
                                 <Trigger Property="IsMouseOver" Value="True">
