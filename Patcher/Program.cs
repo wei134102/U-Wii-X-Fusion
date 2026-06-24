@@ -11,8 +11,8 @@ namespace Patcher
         {
             try
             {
-                string logPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CACHE", "patcher.log");
-                Directory.CreateDirectory(Path.GetDirectoryName(logPath));
+                // Log file in main program directory, not CACHE
+                string logPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "patcher.log");
                 
                 Log(logPath, $"=== Patcher started at {DateTime.Now} ===");
                 Log(logPath, $"Arguments count: {args.Length}");

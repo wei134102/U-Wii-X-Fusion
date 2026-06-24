@@ -391,7 +391,7 @@ namespace U_Wii_X_Fusion.Core.Update
                 UseShellExecute = false,
                 CreateNoWindow = true,
                 WorkingDirectory = AppDomain.CurrentDomain.BaseDirectory,
-                Arguments = $"\"{extractedDir}\" \"{targetDir}\" \"{exePath}\" {currentPid}"
+                Arguments = $@"""{extractedDir}"" ""{targetDir}"" ""{exePath}"" {currentPid}"
             };
             Process.Start(psi);
         }
