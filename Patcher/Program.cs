@@ -15,33 +15,55 @@ namespace Patcher
                 string logPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "patcher.log");
                 
                 Log(logPath, $"=== Patcher started at {DateTime.Now} ===");
-                Log(logPath, $"Arguments count: {args.Length}");
-                for (int i = 0; i < args.Length; i++)
+                
+                // Read arguments from response file to avoid command line escaping issues
+                string responseFile;
+                if (args.Length > 0)
                 {
-                    Log(logPath, $"  args[{i}]: {args[i]}");
+                    responseFile = args[0];
+                    Log(logPath, $"Reading arguments from response file: {responseFile}");
+                }
+                else
+                {
+                    // Fallback: try to find response file in CACHE
+                    string fallbackCacheDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CACHE");
+                    responseFile = Path.Combine(fallbackCacheDir, "patcher_args.txt");
+                    Log(logPath, $"No command line argument, using default response file: {responseFile}");
                 }
                 
-                if (args.Length < 4)
+                if (!File.Exists(responseFile))
                 {
-                    Log(logPath, "ERROR: Insufficient arguments. Expected: <extractedDir> <targetDir> <exePath> <pid>");
+                    Log(logPath, $"ERROR: Response file not found: {responseFile}");
                     return 1;
                 }
                 
-                string extractedDir = args[0];
-                string targetDir = args[1];
-                string exePath = args[2];
+                string[] fileArgs = File.ReadAllLines(responseFile);
+                Log(logPath, $"Arguments from file count: {fileArgs.Length}");
+                for (int i = 0; i < fileArgs.Length; i++)
+                {
+                    Log(logPath, $"  args[{i}]: {fileArgs[i]}");
+                }
+                
+                if (fileArgs.Length < 4)
+                {
+                    Log(logPath, "ERROR: Insufficient arguments in response file. Expected 4 lines");
+                    return 1;
+                }
+                
+                string extractedDir = fileArgs[0];
+                string targetDir = fileArgs[1];
+                string exePath = fileArgs[2];
                 int pid;
                 
-                if (!int.TryParse(args[3], out pid))
+                if (!int.TryParse(fileArgs[3], out pid))
                 {
-                    Log(logPath, $"ERROR: Invalid PID: {args[3]}");
-                    Log(logPath, "This may indicate argument parsing issue with spaces in paths");
+                    Log(logPath, $"ERROR: Invalid PID: {fileArgs[3]}");
                     return 1;
                 }
                 
                 Log(logPath, $"ExtractedDir: {extractedDir}");
                 Log(logPath, $"TargetDir: {targetDir}");
-                Log(logPath, "ExePath: {exePath}");
+                Log(logPath, $"ExePath: {exePath}");
                 Log(logPath, $"PID: {pid}");
                 
                 // Wait for main process to exit

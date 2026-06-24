@@ -386,12 +386,16 @@ namespace U_Wii_X_Fusion.Core.Update
             }
             
             // Launch patcher.exe from main directory with arguments
+            // Use a response file to avoid command line argument escaping issues
+            string responseFile = Path.Combine(GetCacheDir(), "patcher_args.txt");
+            File.WriteAllText(responseFile, $"{extractedDir}\n{targetDir}\n{exePath}\n{currentPid}");
+            
             var psi = new ProcessStartInfo(patcherPath)
             {
                 UseShellExecute = false,
                 CreateNoWindow = true,
                 WorkingDirectory = AppDomain.CurrentDomain.BaseDirectory,
-                Arguments = $@"""{extractedDir}"" ""{targetDir}"" ""{exePath}"" {currentPid}"
+                Arguments = $"\"{responseFile}\""
             };
             Process.Start(psi);
         }
@@ -399,6 +403,19 @@ namespace U_Wii_X_Fusion.Core.Update
         private static string GetCacheDir()
         {
             return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CACHE");
+        }
+
+        private static string EscapeCommandLineArgument(string arg)
+        {
+            // Simple Windows command line argument escaping
+            // Just wrap in quotes if it contains spaces
+            if (string.IsNullOrEmpty(arg))
+                return "\"\"";
+            
+            if (arg.Contains(" ") || arg.Contains("\t"))
+                return "\"" + arg + "\"";
+            
+            return arg;
         }
 
         private static void TryDelete(string path)
