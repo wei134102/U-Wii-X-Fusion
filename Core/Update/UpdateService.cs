@@ -200,14 +200,32 @@ namespace U_Wii_X_Fusion.Core.Update
             if (string.IsNullOrEmpty(remoteVersion)) return false;
             try
             {
-                var remote = Version.Parse(remoteVersion);
-                var current = Version.Parse(currentVersion);
-                return remote > current;
+                // Normalize version strings to ensure consistent comparison
+                // Handle cases like "1.0.0" vs "1.0.0.0" or "1.0.0.10" vs "1.0.0.9"
+                var remote = NormalizeVersion(remoteVersion);
+                var current = NormalizeVersion(currentVersion);
+                
+                bool result = remote > current;
+                return result;
             }
             catch
             {
                 return false;
             }
+        }
+
+        private static Version NormalizeVersion(string versionString)
+        {
+            // Parse the version, handling different numbers of parts
+            var version = Version.Parse(versionString);
+            
+            // If version has less than 4 parts, pad with zeros
+            // This ensures "1.0.0" is treated as "1.0.0.0"
+            if (version.Revision == -1)
+            {
+                return new Version(version.Major, version.Minor, version.Build, 0);
+            }
+            return version;
         }
 
         /// <summary>下载更新包到临时目录</summary>
