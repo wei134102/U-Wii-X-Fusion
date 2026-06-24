@@ -121,7 +121,10 @@
                                     <Grid x:Name="PopupGrid" MinWidth="{TemplateBinding ActualWidth}"
                                           MaxHeight="400" Background="{StaticResource CardBg}">
                                         <Border Background="{StaticResource CardBg}">
-                                            <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="400">
+                                            <ScrollViewer VerticalScrollBarVisibility="Auto" 
+                                                          HorizontalScrollBarVisibility="Disabled"
+                                                          CanContentScroll="True"
+                                                          MaxHeight="400">
                                                 <ItemsPresenter/>
                                             </ScrollViewer>
                                         </Border>
