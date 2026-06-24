@@ -24,6 +24,9 @@ jobs:
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v1.1
       
+    - name: Restore NuGet packages
+      run: msbuild "U-Wii-X Fusion.sln" /t:Restore /p:Configuration=Release /p:Platform="Any CPU"
+      
     - name: Build Release
       run: msbuild "U-Wii-X Fusion.sln" /p:Configuration=Release /p:Platform="Any CPU" /t:Rebuild /v:minimal
       
