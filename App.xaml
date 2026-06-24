@@ -119,9 +119,11 @@
                                        IsOpen="{TemplateBinding IsDropDownOpen}"
                                        Placement="Bottom" PopupAnimation="Slide">
                                     <Grid x:Name="PopupGrid" MinWidth="{TemplateBinding ActualWidth}"
-                                          MaxHeight="200" Background="{StaticResource CardBg}">
+                                          MaxHeight="400" Background="{StaticResource CardBg}">
                                         <Border Background="{StaticResource CardBg}">
-                                            <ItemsPresenter/>
+                                            <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="400">
+                                                <ItemsPresenter/>
+                                            </ScrollViewer>
                                         </Border>
                                     </Grid>
                                 </Popup>
