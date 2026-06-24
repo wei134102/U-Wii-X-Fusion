@@ -15,7 +15,11 @@ namespace Patcher
                 Directory.CreateDirectory(Path.GetDirectoryName(logPath));
                 
                 Log(logPath, $"=== Patcher started at {DateTime.Now} ===");
-                Log(logPath, $"Arguments: {string.Join(" ", args)}");
+                Log(logPath, $"Arguments count: {args.Length}");
+                for (int i = 0; i < args.Length; i++)
+                {
+                    Log(logPath, $"  args[{i}]: {args[i]}");
+                }
                 
                 if (args.Length < 4)
                 {
@@ -31,6 +35,7 @@ namespace Patcher
                 if (!int.TryParse(args[3], out pid))
                 {
                     Log(logPath, $"ERROR: Invalid PID: {args[3]}");
+                    Log(logPath, "This may indicate argument parsing issue with spaces in paths");
                     return 1;
                 }
                 
@@ -119,7 +124,7 @@ namespace Patcher
         static void CopyUpdateFiles(string extractedDir, string targetDir, string logPath)
         {
             string[] excludeDirs = { "Data", "CONFIG", "CACHE" };
-            string[] excludeFiles = { "settings.json" };
+            string[] excludeFiles = { "settings.json", "Patcher.exe", "Patcher.pdb" };
             
             if (!Directory.Exists(extractedDir))
             {

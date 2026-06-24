@@ -377,27 +377,20 @@ namespace U_Wii_X_Fusion.Core.Update
         /// <summary>创建更新脚本（等待主程序退出后应用更新）</summary>
         public void CreateUpdateScript(string extractedDir, string targetDir, string exePath, int currentPid)
         {
-            string cacheDir = GetCacheDir();
-            if (!Directory.Exists(cacheDir)) Directory.CreateDirectory(cacheDir);
+            // Patcher.exe should be in the main program directory, not in CACHE
+            string patcherPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Patcher.exe");
             
-            // Copy patcher.exe to cache directory
-            string patcherSource = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Patcher.exe");
-            string patcherDest = Path.Combine(cacheDir, "Patcher.exe");
-            
-            if (File.Exists(patcherSource))
+            if (!File.Exists(patcherPath))
             {
-                File.Copy(patcherSource, patcherDest, overwrite: true);
-            }
-            else
-            {
-                throw new FileNotFoundException("Patcher.exe not found in application directory", patcherSource);
+                throw new FileNotFoundException("Patcher.exe not found in application directory", patcherPath);
             }
             
-            // Launch patcher.exe with arguments
-            var psi = new ProcessStartInfo(patcherDest)
+            // Launch patcher.exe from main directory with arguments
+            var psi = new ProcessStartInfo(patcherPath)
             {
                 UseShellExecute = false,
                 CreateNoWindow = true,
+                WorkingDirectory = AppDomain.CurrentDomain.BaseDirectory,
                 Arguments = $"\"{extractedDir}\" \"{targetDir}\" \"{exePath}\" {currentPid}"
             };
             Process.Start(psi);
