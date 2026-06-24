@@ -332,7 +332,10 @@
   </Target>
   <Import Project="packages\EntityFramework.6.4.4\build\EntityFramework.targets" Condition="Exists('packages\EntityFramework.6.4.4\build\EntityFramework.targets')" />
   <Import Project="packages\Stub.System.Data.SQLite.Core.NetFramework.1.0.118.0\build\net46\Stub.System.Data.SQLite.Core.NetFramework.targets" Condition="Exists('packages\Stub.System.Data.SQLite.Core.NetFramework.1.0.118.0\build\net46\Stub.System.Data.SQLite.Core.NetFramework.targets')" />
-  <Target Name="CopyPatcher" AfterTargets="CopyFilesToOutputDirectory">
-    <Copy SourceFiles="Patcher\bin\$(Configuration)\Patcher.exe" DestinationFolder="$(OutputPath)" Condition="Exists('Patcher\bin\$(Configuration)\Patcher.exe')" />
+  <Target Name="CopyPatcher" AfterTargets="Build">
+    <PropertyGroup>
+      <_PatcherSrc>bin\$(Platform)\$(Configuration)\PatcherOutput\Patcher.exe</_PatcherSrc>
+    </PropertyGroup>
+    <Copy SourceFiles="$(_PatcherSrc)" DestinationFolder="$(OutputPath)" Condition="Exists('$(_PatcherSrc)')" />
   </Target>
 </Project>
