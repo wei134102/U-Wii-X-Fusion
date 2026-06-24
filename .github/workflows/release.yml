@@ -21,11 +21,14 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       
-    - name: Setup MSBuild
-      uses: microsoft/setup-msbuild@v1.1
+    - name: Setup NuGet
+      uses: NuGet/setup-nuget@v1
       
     - name: Restore NuGet packages
-      run: msbuild "U-Wii-X Fusion.sln" /t:Restore /p:Configuration=Release /p:Platform="Any CPU"
+      run: nuget restore "U-Wii-X Fusion.sln"
+      
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v1.1
       
     - name: Build Release
       run: msbuild "U-Wii-X Fusion.sln" /p:Configuration=Release /p:Platform="Any CPU" /t:Rebuild /v:minimal
