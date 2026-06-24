@@ -53,6 +53,11 @@ namespace U_Wii_X_Fusion
             RefreshList();
         }
 
+        private void BtnCloseQuery_Click(object sender, RoutedEventArgs e)
+        {
+            this.Close();
+        }
+
         private void CmbCategory_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             RefreshList();

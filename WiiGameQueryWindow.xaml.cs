@@ -71,6 +71,11 @@ namespace U_Wii_X_Fusion
             dgGames.SelectionChanged += DgGames_SelectionChanged;
         }
 
+        private void BtnCloseQuery_Click(object sender, RoutedEventArgs e)
+        {
+            this.Close();
+        }
+
         private void DgGames_LoadingRow(object sender, DataGridRowEventArgs e)
         {
             if (e.Row.Item is GameInfo g)

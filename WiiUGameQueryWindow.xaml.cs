@@ -62,6 +62,11 @@ namespace U_Wii_X_Fusion
             dgGames.SelectionChanged += DgGames_SelectionChanged;
         }
 
+        private void BtnCloseQuery_Click(object sender, RoutedEventArgs e)
+        {
+            this.Close();
+        }
+
         private void PopulateGenreComboBox()
         {
             var genres = new HashSet<string>(StringComparer.OrdinalIgnoreCase);

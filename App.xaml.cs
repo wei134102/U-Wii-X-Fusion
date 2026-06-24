@@ -13,6 +13,43 @@ namespace U_Wii_X_Fusion
     /// </summary>
     public partial class App : Application
     {
+        /// <summary>主题名称到 XAML 文件路径的映射</summary>
+        private static readonly System.Collections.Generic.Dictionary<string, string> ThemeMap =
+            new System.Collections.Generic.Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                { "Default", "Themes/DefaultTheme.xaml" },
+                { "Blue", "Themes/BlueTheme.xaml" },
+                { "Green", "Themes/GreenTheme.xaml" },
+                { "Purple", "Themes/PurpleTheme.xaml" },
+                { "Orange", "Themes/OrangeTheme.xaml" },
+                { "Cyan", "Themes/CyanTheme.xaml" }
+            };
+
+        /// <summary>当前主题名称</summary>
+        public static string CurrentTheme { get; private set; } = "Default";
+
+        /// <summary>切换主题（运行时动态替换资源字典）</summary>
+        public static void SwitchTheme(string themeName)
+        {
+            if (!ThemeMap.ContainsKey(themeName))
+                themeName = "Default";
+
+            var source = new Uri(ThemeMap[themeName], UriKind.Relative);
+
+            // 移除旧的主题字典
+            var oldDict = Current.Resources.MergedDictionaries.Count > 0
+                ? Current.Resources.MergedDictionaries[0]
+                : null;
+            if (oldDict != null)
+                Current.Resources.MergedDictionaries.Remove(oldDict);
+
+            // 添加新的主题字典（必须在索引0，以便样式中的 StaticResource 能正确解析）
+            var newDict = new ResourceDictionary { Source = source };
+            Current.Resources.MergedDictionaries.Insert(0, newDict);
+
+            CurrentTheme = themeName;
+        }
+
         /// <summary>从程序目录 icons 下加载窗口图标（优先 icon.ico，其次 icon.png），供主窗口和子窗口使用。</summary>
         public static System.Windows.Media.ImageSource GetWindowIcon()
         {

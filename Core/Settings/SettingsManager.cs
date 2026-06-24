@@ -12,6 +12,14 @@ namespace U_Wii_X_Fusion.Core.Settings
         public bool CheckDevices { get; set; } = true;
         /// <summary>使用英文界面（false=中文，true=英文）</summary>
         public bool UseEnglish { get; set; } = false;
+        /// <summary>当前主题名称（Default, Blue, Green, Purple, Orange, Cyan）</summary>
+        public string Theme { get; set; } = "Default";
+        /// <summary>Dolphin 模拟器路径（如 C:\Emulators\Dolphin\Dolphin.exe）</summary>
+        public string DolphinPath { get; set; } = string.Empty;
+        /// <summary>Nintendo Switch 模拟器路径（如 C:\Emulators\yuzu\yuzu.exe）</summary>
+        public string SwitchEmulatorPath { get; set; } = string.Empty;
+        /// <summary>PlayStation 模拟器路径（如 C:\Emulators\RPCS3\rpcs3.exe）</summary>
+        public string PlayStationEmulatorPath { get; set; } = string.Empty;
 
         /// <summary>Wii 封面下载：2D 封面（cover）</summary>
         public bool DownloadWiiCover2D { get; set; } = true;

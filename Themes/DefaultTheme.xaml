@@ -1,0 +1,32 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- Default Dark Theme (Current) -->
+    <SolidColorBrush x:Key="PrimaryBg" Color="#0d1117"/>
+    <SolidColorBrush x:Key="SecondaryBg" Color="#161b22"/>
+    <SolidColorBrush x:Key="AccentBg" Color="#21262d"/>
+    <SolidColorBrush x:Key="AccentColor" Color="#ff6b6b"/>
+    <SolidColorBrush x:Key="CardBg" Color="#21262d"/>
+    <SolidColorBrush x:Key="PanelBg" Color="#30363d"/>
+    <SolidColorBrush x:Key="TextPrimary" Color="#f0f6fc"/>
+    <SolidColorBrush x:Key="TextSecondary" Color="#c9d1d9"/>
+    <SolidColorBrush x:Key="TextMuted" Color="#8b949e"/>
+    <SolidColorBrush x:Key="BorderColor" Color="#30363d"/>
+    <SolidColorBrush x:Key="GridHeaderBg" Color="#21262d"/>
+    <SolidColorBrush x:Key="GridHeaderForeground" Color="#f0f6fc"/>
+    <SolidColorBrush x:Key="GridLine" Color="#30363d"/>
+    <SolidColorBrush x:Key="HoverBg" Color="#30363d"/>
+    <SolidColorBrush x:Key="SelectedBg" Color="#ff6b6b"/>
+    <SolidColorBrush x:Key="SelectedForeground" Color="#ffffff"/>
+    <SolidColorBrush x:Key="ButtonPrimary" Color="#ff6b6b"/>
+    <SolidColorBrush x:Key="ButtonSecondary" Color="#21262d"/>
+    <SolidColorBrush x:Key="ScrollbarThumb" Color="#484f58"/>
+    <SolidColorBrush x:Key="ScrollbarTrack" Color="#0d1117"/>
+    <SolidColorBrush x:Key="ExpanderHeaderBg" Color="#21262d"/>
+    <SolidColorBrush x:Key="TabItemSelectedBg" Color="#ff6b6b"/>
+    <SolidColorBrush x:Key="TabItemBg" Color="#161b22"/>
+    <SolidColorBrush x:Key="TabItemForeground" Color="#c9d1d9"/>
+    <SolidColorBrush x:Key="TabItemSelectedForeground" Color="#ffffff"/>
+    <SolidColorBrush x:Key="CoverPlaceholder" Color="#21262d"/>
+    <SolidColorBrush x:Key="SuccessColor" Color="#3fb950"/>
+    <SolidColorBrush x:Key="WarningColor" Color="#d29922"/>
+</ResourceDictionary>

@@ -239,6 +239,10 @@ namespace U_Wii_X_Fusion
             btnBrowseGamePath.Click += BtnBrowseGamePath_Click;
             btnBrowseDatabasePath.Click += BtnBrowseDatabasePath_Click;
             btnCheckUpdate.Click += BtnCheckUpdate_Click;
+            // 模拟器路径浏览按钮
+            if (btnBrowseDolphin != null) btnBrowseDolphin.Click += BtnBrowseDolphin_Click;
+            if (btnBrowseSwitch != null) btnBrowseSwitch.Click += BtnBrowseSwitch_Click;
+            if (btnBrowsePlayStation != null) btnBrowsePlayStation.Click += BtnBrowsePlayStation_Click;
             // btnWiiPluginEditor 已在 XAML 中指定 Click="BtnWiiPluginEditor_Click"，此处不再重复订阅，否则会弹出两个窗口
         }
 
@@ -468,12 +472,20 @@ namespace U_Wii_X_Fusion
                 cboDiskDrive.ItemsSource = drives;
                 // 不自动选中盘符，避免默认选到 C 盘导致误扫描
                 cboDiskDrive.SelectedIndex = -1;
+                if (txtDiskDrivePlaceholder != null)
+                {
+                    txtDiskDrivePlaceholder.Visibility = Visibility.Visible;
+                }
             }
         }
 
         private void CboDiskDrive_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             var di = cboDiskDrive.SelectedItem as DriveItem;
+            if (txtDiskDrivePlaceholder != null)
+            {
+                txtDiskDrivePlaceholder.Visibility = di == null ? Visibility.Visible : Visibility.Collapsed;
+            }
             if (di == null) return;
             if (_currentListSource == GameListSource.Disk1)
             {
@@ -3810,6 +3822,27 @@ namespace U_Wii_X_Fusion
                 if (chkCover3D != null) chkCover3D.IsChecked = settings.DownloadWiiCover3D;
                 if (chkCoverDisc != null) chkCoverDisc.IsChecked = settings.DownloadWiiDiscCover;
                 if (chkCoverFull != null) chkCoverFull.IsChecked = settings.DownloadWiiFullCover;
+
+                // 加载主题设置
+                if (cboTheme != null)
+                {
+                    string themeName = settings.Theme ?? "Default";
+                    for (int i = 0; i < cboTheme.Items.Count; i++)
+                    {
+                        if (cboTheme.Items[i] is ComboBoxItem cbi && string.Equals(cbi.Tag?.ToString(), themeName, StringComparison.OrdinalIgnoreCase))
+                        {
+                            cboTheme.SelectedIndex = i;
+                            break;
+                        }
+                    }
+                    // 应用保存的主题
+                    App.SwitchTheme(themeName);
+                }
+
+                // 加载模拟器路径设置
+                if (txtDolphinPath != null) txtDolphinPath.Text = settings.DolphinPath ?? string.Empty;
+                if (txtSwitchPath != null) txtSwitchPath.Text = settings.SwitchEmulatorPath ?? string.Empty;
+                if (txtPlayStationPath != null) txtPlayStationPath.Text = settings.PlayStationEmulatorPath ?? string.Empty;
             }
             catch (Exception ex)
             {
@@ -3829,6 +3862,7 @@ namespace U_Wii_X_Fusion
                     EnableLogging = chkEnableLogging.IsChecked ?? false,
                     CheckDevices = chkCheckDevices.IsChecked ?? false,
                     UseEnglish = current.UseEnglish,
+                    Theme = (cboTheme?.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "Default",
 
                     // Wii 封面下载设置
                     DownloadWiiCover2D = chkCover2D?.IsChecked ?? true,
@@ -3842,6 +3876,9 @@ namespace U_Wii_X_Fusion
                     CoverPath = txtCoverPath.Text,
                     WiiUCoverPath = txtWiiUCoverPath != null ? txtWiiUCoverPath.Text : string.Empty,
                     XboxCoverPath = txtXboxCoverPath != null ? txtXboxCoverPath.Text : string.Empty,
+                    DolphinPath = txtDolphinPath?.Text ?? string.Empty,
+                    SwitchEmulatorPath = txtSwitchPath?.Text ?? string.Empty,
+                    PlayStationEmulatorPath = txtPlayStationPath?.Text ?? string.Empty,
                     LastScanPath = current.LastScanPath,
                     LastXboxScanPath = current.LastXboxScanPath,
                     LastPluginEditorPluginsDir = current.LastPluginEditorPluginsDir,
@@ -3888,6 +3925,135 @@ namespace U_Wii_X_Fusion
             if (_wiiPluginEditorWindow != null && _wiiPluginEditorWindow.IsLoaded)
             {
                 try { _wiiPluginEditorWindow.ApplyLanguageFromGlobal(); } catch { }
+            }
+        }
+
+        /// <summary>主题下拉框选择变更时立即切换主题</summary>
+        private void CboTheme_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (cboTheme?.SelectedItem is ComboBoxItem item)
+            {
+                string themeName = item.Tag?.ToString() ?? "Default";
+                App.SwitchTheme(themeName);
+            }
+        }
+
+        // ==================== 模拟器路径浏览 ====================
+
+        private void BtnBrowseDolphin_Click(object sender, RoutedEventArgs e)
+        {
+            using (var dialog = new System.Windows.Forms.OpenFileDialog
+            {
+                Filter = "Dolphin 可执行文件|Dolphin.exe|所有文件|*.*",
+                Title = "选择 Dolphin 模拟器路径"
+            })
+            {
+                if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                    txtDolphinPath.Text = dialog.FileName;
+            }
+        }
+
+        private void BtnBrowseSwitch_Click(object sender, RoutedEventArgs e)
+        {
+            using (var dialog = new System.Windows.Forms.OpenFileDialog
+            {
+                Filter = "Switch 模拟器可执行文件|*.exe|所有文件|*.*",
+                Title = "选择 Nintendo Switch 模拟器路径"
+            })
+            {
+                if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                    txtSwitchPath.Text = dialog.FileName;
+            }
+        }
+
+        private void BtnBrowsePlayStation_Click(object sender, RoutedEventArgs e)
+        {
+            using (var dialog = new System.Windows.Forms.OpenFileDialog
+            {
+                Filter = "PS 模拟器可执行文件|*.exe|所有文件|*.*",
+                Title = "选择 PlayStation 模拟器路径"
+            })
+            {
+                if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                    txtPlayStationPath.Text = dialog.FileName;
+            }
+        }
+
+        // ==================== 右键菜单 ====================
+
+        /// <summary>右键菜单：使用 Dolphin 模拟器游玩选中游戏</summary>
+        private void MenuItemPlayWithDolphin_Click(object sender, RoutedEventArgs e)
+        {
+            var settings = SettingsManager.GetSettings();
+            string dolphinPath = settings.DolphinPath?.Trim();
+            if (string.IsNullOrEmpty(dolphinPath) || !File.Exists(dolphinPath))
+            {
+                MessageBox.Show(
+                    AppLanguage.L("请先在设置中配置 Dolphin 模拟器路径！", "Please configure the Dolphin emulator path in settings first!"),
+                    AppLanguage.L("提示", "Tip"),
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            // 获取所有选中的游戏
+            var selectedGames = dgGames.SelectedItems.Cast<GameInfo>().ToList();
+            if (selectedGames.Count == 0)
+            {
+                MessageBox.Show(AppLanguage.L("请先选择要游玩的游戏！", "Please select a game first!"),
+                    AppLanguage.L("提示", "Tip"), MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            // 只启动第一个选中的游戏
+            var game = selectedGames[0];
+            if (string.IsNullOrEmpty(game.Path))
+            {
+                MessageBox.Show(AppLanguage.L("该游戏路径无效！", "Invalid game path!"),
+                    AppLanguage.L("提示", "Tip"), MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            try
+            {
+                // Dolphin 支持直接传入游戏文件/文件夹路径启动
+                var psi = new ProcessStartInfo
+                {
+                    FileName = dolphinPath,
+                    Arguments = $"\"{game.Path}\"",
+                    UseShellExecute = true
+                };
+                Process.Start(psi);
+                MessageBox.Show(
+                    AppLanguage.L($"正在使用 Dolphin 打开《{game.Title}》...", $"Launching {game.Title} with Dolphin..."),
+                    AppLanguage.L("提示", "Tip"),
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(AppLanguage.L($"启动 Dolphin 失败：{ex.Message}", $"Failed to launch Dolphin: {ex.Message}"),
+                    AppLanguage.L("错误", "Error"), MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        /// <summary>右键菜单：打开游戏所在目录</summary>
+        private void MenuItemOpenGameFolder_Click(object sender, RoutedEventArgs e)
+        {
+            var selectedGames = dgGames.SelectedItems.Cast<GameInfo>().ToList();
+            if (selectedGames.Count == 0) return;
+
+            var game = selectedGames[0];
+            if (string.IsNullOrEmpty(game.Path)) return;
+
+            try
+            {
+                string dir = Directory.Exists(game.Path) ? game.Path : System.IO.Path.GetDirectoryName(game.Path);
+                if (!string.IsNullOrEmpty(dir) && Directory.Exists(dir))
+                    Process.Start("explorer.exe", $"\"{dir}\"");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(AppLanguage.L($"打开目录失败：{ex.Message}", $"Failed to open folder: {ex.Message}"),
+                    AppLanguage.L("错误", "Error"), MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
