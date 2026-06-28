@@ -36,6 +36,7 @@
 
         <!-- 搜索与筛选区域 - 可折叠 -->
         <Expander Grid.Row="1" x:Name="expQueryFilter" Header="搜索与筛选" IsExpanded="True" Style="{StaticResource RetroExpander}" Margin="0,0,0,10">
+            <ScrollViewer VerticalScrollBarVisibility="Auto" CanContentScroll="False" MaxHeight="200">
             <Border Background="{StaticResource CardBg}" BorderBrush="{StaticResource BorderColor}" BorderThickness="1" CornerRadius="0,0,4,4" Padding="10">
                 <StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
@@ -98,6 +99,7 @@
                     </WrapPanel>
                 </StackPanel>
             </Border>
+            </ScrollViewer>
         </Expander>
 
         <!-- 游戏列表和详情 -->

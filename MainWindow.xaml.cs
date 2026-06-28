@@ -426,6 +426,23 @@ namespace U_Wii_X_Fusion
             ApplyWiiFilters();
         }
 
+        private void BtnWiiFilterToggle_Click(object sender, RoutedEventArgs e)
+        {
+            var content = pnlWiiFilterContent;
+            var arrow = arrowWiiFilter;
+            
+            if (content.Visibility == Visibility.Collapsed)
+            {
+                content.Visibility = Visibility.Visible;
+                arrow.Data = Geometry.Parse("M 4 0 L 0 4 L 8 4 Z");
+            }
+            else
+            {
+                content.Visibility = Visibility.Collapsed;
+                arrow.Data = Geometry.Parse("M 0 4 L 4 8 L 8 4 Z");
+            }
+        }
+
         private void BtnCheckUpdate_Click(object sender, RoutedEventArgs e)
         {
             var updateService = new UpdateService("wei134102", "U-Wii-X-Fusion");
@@ -1964,6 +1981,23 @@ namespace U_Wii_X_Fusion
             ApplyWiiUFilters();
         }
 
+        private void BtnWiiUFilterToggle_Click(object sender, RoutedEventArgs e)
+        {
+            var content = pnlWiiUFilterContent;
+            var arrow = arrowWiiUFilter;
+            
+            if (content.Visibility == Visibility.Collapsed)
+            {
+                content.Visibility = Visibility.Visible;
+                arrow.Data = Geometry.Parse("M 4 0 L 0 4 L 8 4 Z");
+            }
+            else
+            {
+                content.Visibility = Visibility.Collapsed;
+                arrow.Data = Geometry.Parse("M 0 4 L 4 8 L 8 4 Z");
+            }
+        }
+
         private void UpdateWiiUListStatus()
         {
             if (txtWiiUListStatus == null) return;
@@ -2040,6 +2074,23 @@ namespace U_Wii_X_Fusion
         {
             SelectComboByValue(cmbXboxCategoryFilter, "全部类型", "全部类型");
             ApplyXboxFilters();
+        }
+
+        private void BtnXboxFilterToggle_Click(object sender, RoutedEventArgs e)
+        {
+            var content = pnlXboxFilterContent;
+            var arrow = arrowXboxFilter;
+            
+            if (content.Visibility == Visibility.Collapsed)
+            {
+                content.Visibility = Visibility.Visible;
+                arrow.Data = Geometry.Parse("M 4 0 L 0 4 L 8 4 Z");
+            }
+            else
+            {
+                content.Visibility = Visibility.Collapsed;
+                arrow.Data = Geometry.Parse("M 0 4 L 4 8 L 8 4 Z");
+            }
         }
 
         private void UpdateXboxListStatus()
