@@ -894,6 +894,13 @@ namespace U_Wii_X_Fusion
             UpdateWiiListStatus();
         }
 
+        // Wii tab "选择" 菜单项别名
+        private void BtnWiiSelectAll_Click(object sender, RoutedEventArgs e) => BtnSelectAll_Click(sender, e);
+        private void BtnWiiInvertSelect_Click(object sender, RoutedEventArgs e) => BtnInvertSelect_Click(sender, e);
+        private void BtnWiiClearSelect_Click(object sender, RoutedEventArgs e) => BtnClearSelect_Click(sender, e);
+        private void BtnWiiSaveList_Click(object sender, RoutedEventArgs e) => BtnSaveList_Click(sender, e);
+        private void BtnWiiLoadList_Click(object sender, RoutedEventArgs e) => BtnLoadList_Click(sender, e);
+
         private void BtnListSourceDirectory_Click(object sender, RoutedEventArgs e)
         {
             _currentListSource = GameListSource.Directory;

@@ -237,8 +237,15 @@
                                 <Button x:Name="btnSelectMissingOnDisk" Content="选择" Width="60" Padding="4,2" Margin="0,0,4,0" Click="BtnSelectMissingOnDisk_Click" Style="{StaticResource RetroButtonBase}" FontSize="10">
                                     <Button.ContextMenu>
                                         <ContextMenu>
+                                            <MenuItem Header="全选" Click="BtnWiiSelectAll_Click"/>
+                                            <MenuItem Header="反选" Click="BtnWiiInvertSelect_Click"/>
+                                            <MenuItem Header="清空选择" Click="BtnWiiClearSelect_Click"/>
+                                            <Separator/>
                                             <MenuItem Header="选择磁盘1缺失" Click="MenuSelectMissingOnDisk1_Click"/>
                                             <MenuItem Header="选择磁盘2缺失" Click="MenuSelectMissingOnDisk2_Click"/>
+                                            <Separator/>
+                                            <MenuItem Header="导入游戏列表" Click="BtnWiiLoadList_Click"/>
+                                            <MenuItem Header="导出游戏列表" Click="BtnWiiSaveList_Click"/>
                                         </ContextMenu>
                                     </Button.ContextMenu>
                                 </Button>
