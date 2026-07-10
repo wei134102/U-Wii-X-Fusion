@@ -945,6 +945,20 @@ namespace U_Wii_X_Fusion
             CopyLocalCoversToDiscFor(_disc2CoverPath, "磁盘2");
         }
 
+        private void BtnWiiCoversMenu_Click(object sender, RoutedEventArgs e)
+        {
+            if (btnWiiDownloadCovers?.ContextMenu != null)
+            {
+                btnWiiDownloadCovers.ContextMenu.PlacementTarget = btnWiiDownloadCovers;
+                btnWiiDownloadCovers.ContextMenu.IsOpen = true;
+            }
+        }
+
+        private void BtnWiiDownloadCovers_MenuItemClick(object sender, RoutedEventArgs e)
+        {
+            DownloadWiiCoversForSelected();
+        }
+
         private void CopyLocalCoversToDiscFor(string targetCoverPath, string diskName)
         {
             if (string.IsNullOrEmpty(_coverPath) || !Directory.Exists(_coverPath))
@@ -3467,11 +3481,6 @@ namespace U_Wii_X_Fusion
                 return;
             }
             MessageBox.Show($"下载完成：成功 {ok} 个，失败 {fail} 个。", "下载封面", MessageBoxButton.OK, MessageBoxImage.Information);
-        }
-
-        private void BtnWiiDownloadCovers_Click(object sender, RoutedEventArgs e)
-        {
-            DownloadWiiCoversForSelected();
         }
 
         private async void DownloadWiiCoversForSelected()
