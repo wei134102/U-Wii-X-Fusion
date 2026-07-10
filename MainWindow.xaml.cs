@@ -45,6 +45,8 @@ namespace U_Wii_X_Fusion
         private string _coverPath;
         private string _wiiuCoverPath;
         private string _xboxCoverPath;
+        private string _disc1CoverPath;
+        private string _disc2CoverPath;
         private readonly WiiGameIdentifier _wiiIdentifier = new WiiGameIdentifier();
         private readonly NgcGameIdentifier _ngcIdentifier = new NgcGameIdentifier();
         private enum GameListSource { Directory, Disk1, Disk2 }
@@ -112,6 +114,8 @@ namespace U_Wii_X_Fusion
             LoadCoverPath();
             LoadWiiUCoverPath();
             LoadXboxCoverPath();
+            LoadDisc1CoverPath();
+            LoadDisc2CoverPath();
             LoadDrives();
             RefreshWiiFilterOptions();
             ApplyWiiFilters();
@@ -236,6 +240,10 @@ namespace U_Wii_X_Fusion
                 btnBrowseWiiUCoverPath.Click += BtnBrowseWiiUCoverPath_Click;
             if (btnBrowseXboxCoverPath != null)
                 btnBrowseXboxCoverPath.Click += BtnBrowseXboxCoverPath_Click;
+            if (btnBrowseDisc1CoverPath != null)
+                btnBrowseDisc1CoverPath.Click += BtnBrowseDisc1CoverPath_Click;
+            if (btnBrowseDisc2CoverPath != null)
+                btnBrowseDisc2CoverPath.Click += BtnBrowseDisc2CoverPath_Click;
             btnBrowseGamePath.Click += BtnBrowseGamePath_Click;
             btnBrowseDatabasePath.Click += BtnBrowseDatabasePath_Click;
             btnCheckUpdate.Click += BtnCheckUpdate_Click;
@@ -900,6 +908,98 @@ namespace U_Wii_X_Fusion
         private void BtnWiiClearSelect_Click(object sender, RoutedEventArgs e) => BtnClearSelect_Click(sender, e);
         private void BtnWiiSaveList_Click(object sender, RoutedEventArgs e) => BtnSaveList_Click(sender, e);
         private void BtnWiiLoadList_Click(object sender, RoutedEventArgs e) => BtnLoadList_Click(sender, e);
+
+        private void BtnDisc1CoverPath_Click(object sender, RoutedEventArgs e)
+        {
+            using (var folderBrowser = new System.Windows.Forms.FolderBrowserDialog())
+            {
+                folderBrowser.Description = "选择磁盘1 封面存储路径（与设置页相同的路径）";
+                if (folderBrowser.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                {
+                    _disc1CoverPath = folderBrowser.SelectedPath;
+                    if (txtDisc1CoverPath != null) txtDisc1CoverPath.Text = _disc1CoverPath;
+                }
+            }
+        }
+
+        private void BtnDisc2CoverPath_Click(object sender, RoutedEventArgs e)
+        {
+            using (var folderBrowser = new System.Windows.Forms.FolderBrowserDialog())
+            {
+                folderBrowser.Description = "选择磁盘2 封面存储路径（与设置页相同的路径）";
+                if (folderBrowser.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                {
+                    _disc2CoverPath = folderBrowser.SelectedPath;
+                    if (txtDisc2CoverPath != null) txtDisc2CoverPath.Text = _disc2CoverPath;
+                }
+            }
+        }
+
+        private void BtnWiiCopyLocalCovers_Disk1_Click(object sender, RoutedEventArgs e)
+        {
+            CopyLocalCoversToDiscFor(_disc1CoverPath, "磁盘1");
+        }
+
+        private void BtnWiiCopyLocalCovers_Disk2_Click(object sender, RoutedEventArgs e)
+        {
+            CopyLocalCoversToDiscFor(_disc2CoverPath, "磁盘2");
+        }
+
+        private void CopyLocalCoversToDiscFor(string targetCoverPath, string diskName)
+        {
+            if (string.IsNullOrEmpty(_coverPath) || !Directory.Exists(_coverPath))
+            {
+                MessageBox.Show("请先在设置中设置 Wii 封面存储路径。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            if (string.IsNullOrEmpty(targetCoverPath))
+            {
+                MessageBox.Show($"请先设置{diskName}的封面路径（在设置页或上方按钮设置）。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            var selected = _scannedGames.Where(g => g.IsSelected).ToList();
+            if (selected.Count == 0)
+            {
+                MessageBox.Show("请先勾选要拷贝封面的游戏。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            if (!Directory.Exists(targetCoverPath))
+                Directory.CreateDirectory(targetCoverPath);
+
+            int copied = 0, skipped = 0;
+            string[] coverSubDirs = { "2D", "3d", "disc", "full" };
+
+            foreach (var game in selected)
+            {
+                if (game == null || string.IsNullOrEmpty(game.GameId)) continue;
+                string gameId = game.GameId.Trim().ToUpperInvariant();
+
+                foreach (var subDir in coverSubDirs)
+                {
+                    string srcDir = Path.Combine(_coverPath, subDir);
+                    string dstDir = Path.Combine(targetCoverPath, subDir);
+                    string srcFile = Path.Combine(srcDir, gameId + ".png");
+                    string dstFile = Path.Combine(dstDir, gameId + ".png");
+
+                    if (File.Exists(srcFile))
+                    {
+                        if (!Directory.Exists(dstDir))
+                            Directory.CreateDirectory(dstDir);
+                        File.Copy(srcFile, dstFile, true);
+                        copied++;
+                    }
+                    else
+                    {
+                        skipped++;
+                    }
+                }
+            }
+
+            MessageBox.Show($"已拷贝 {copied} 个封面文件到 {diskName}（{targetCoverPath}），跳过 {skipped} 个。", "本地封面拷贝", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
 
         private void BtnListSourceDirectory_Click(object sender, RoutedEventArgs e)
         {
@@ -3582,6 +3682,20 @@ namespace U_Wii_X_Fusion
             if (txtXboxCoverPath != null) txtXboxCoverPath.Text = _xboxCoverPath;
         }
 
+        private void LoadDisc1CoverPath()
+        {
+            var settings = SettingsManager.GetSettings();
+            _disc1CoverPath = settings.Disc1CoverPath ?? string.Empty;
+            if (txtDisc1CoverPath != null) txtDisc1CoverPath.Text = _disc1CoverPath;
+        }
+
+        private void LoadDisc2CoverPath()
+        {
+            var settings = SettingsManager.GetSettings();
+            _disc2CoverPath = settings.Disc2CoverPath ?? string.Empty;
+            if (txtDisc2CoverPath != null) txtDisc2CoverPath.Text = _disc2CoverPath;
+        }
+
         /// <summary>更新右侧封面预览（Disc + 3D）。</summary>
         private void UpdateGameVisuals(GameInfo game)
         {
@@ -3846,6 +3960,32 @@ namespace U_Wii_X_Fusion
             }
         }
 
+        private void BtnBrowseDisc1CoverPath_Click(object sender, RoutedEventArgs e)
+        {
+            using (var folderBrowser = new System.Windows.Forms.FolderBrowserDialog())
+            {
+                folderBrowser.Description = "选择磁盘1 封面存储路径";
+                if (folderBrowser.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                {
+                    txtDisc1CoverPath.Text = folderBrowser.SelectedPath;
+                    _disc1CoverPath = folderBrowser.SelectedPath;
+                }
+            }
+        }
+
+        private void BtnBrowseDisc2CoverPath_Click(object sender, RoutedEventArgs e)
+        {
+            using (var folderBrowser = new System.Windows.Forms.FolderBrowserDialog())
+            {
+                folderBrowser.Description = "选择磁盘2 封面存储路径";
+                if (folderBrowser.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                {
+                    txtDisc2CoverPath.Text = folderBrowser.SelectedPath;
+                    _disc2CoverPath = folderBrowser.SelectedPath;
+                }
+            }
+        }
+
         #endregion
 
         #region 设置相关方法
@@ -3870,6 +4010,10 @@ namespace U_Wii_X_Fusion
                 _wiiuCoverPath = settings.WiiUCoverPath ?? string.Empty;
                 if (txtXboxCoverPath != null) txtXboxCoverPath.Text = settings.XboxCoverPath ?? string.Empty;
                 _xboxCoverPath = settings.XboxCoverPath ?? string.Empty;
+                if (txtDisc1CoverPath != null) txtDisc1CoverPath.Text = settings.Disc1CoverPath ?? string.Empty;
+                _disc1CoverPath = settings.Disc1CoverPath ?? string.Empty;
+                if (txtDisc2CoverPath != null) txtDisc2CoverPath.Text = settings.Disc2CoverPath ?? string.Empty;
+                _disc2CoverPath = settings.Disc2CoverPath ?? string.Empty;
 
                 // 加载网络设置
                 txtApiKey.Text = settings.ApiKey;
@@ -3934,6 +4078,8 @@ namespace U_Wii_X_Fusion
                     CoverPath = txtCoverPath.Text,
                     WiiUCoverPath = txtWiiUCoverPath != null ? txtWiiUCoverPath.Text : string.Empty,
                     XboxCoverPath = txtXboxCoverPath != null ? txtXboxCoverPath.Text : string.Empty,
+                    Disc1CoverPath = txtDisc1CoverPath != null ? txtDisc1CoverPath.Text : string.Empty,
+                    Disc2CoverPath = txtDisc2CoverPath != null ? txtDisc2CoverPath.Text : string.Empty,
                     DolphinPath = txtDolphinPath?.Text ?? string.Empty,
                     SwitchEmulatorPath = txtSwitchPath?.Text ?? string.Empty,
                     PlayStationEmulatorPath = txtPlayStationPath?.Text ?? string.Empty,
@@ -4145,11 +4291,15 @@ namespace U_Wii_X_Fusion
             if (lblCoverPath != null) lblCoverPath.Text = L("封面存储路径:", "Cover path:");
             if (lblWiiUCoverPath != null) lblWiiUCoverPath.Text = L("Wii U 封面路径:", "Wii U cover path:");
             if (lblXboxCoverPath != null) lblXboxCoverPath.Text = L("Xbox 360 封面路径:", "Xbox 360 cover path:");
+            if (lblDisc1CoverPath != null) lblDisc1CoverPath.Text = L("磁盘1封面路径:", "Disc 1 cover path:");
+            if (lblDisc2CoverPath != null) lblDisc2CoverPath.Text = L("磁盘2封面路径:", "Disc 2 cover path:");
             if (btnBrowseGamePath != null) btnBrowseGamePath.Content = L("浏览...", "Browse...");
             if (btnBrowseDatabasePath != null) btnBrowseDatabasePath.Content = L("浏览...", "Browse...");
             if (btnBrowseCoverPath != null) btnBrowseCoverPath.Content = L("浏览...", "Browse...");
             if (btnBrowseWiiUCoverPath != null) btnBrowseWiiUCoverPath.Content = L("浏览...", "Browse...");
             if (btnBrowseXboxCoverPath != null) btnBrowseXboxCoverPath.Content = L("浏览...", "Browse...");
+            if (btnBrowseDisc1CoverPath != null) btnBrowseDisc1CoverPath.Content = L("浏览...", "Browse...");
+            if (btnBrowseDisc2CoverPath != null) btnBrowseDisc2CoverPath.Content = L("浏览...", "Browse...");
             if (lblApiKey != null) lblApiKey.Text = L("元数据API密钥:", "Metadata API key:");
             if (chkEnableProxy != null) chkEnableProxy.Content = L("启用代理", "Enable proxy");
             if (expCoverDownload != null) expCoverDownload.Header = L("封面下载设置", "Cover download options");
@@ -4164,13 +4314,14 @@ namespace U_Wii_X_Fusion
             if (btnListSourceDirectory != null) btnListSourceDirectory.Content = L("目录", "Directory");
             if (btnListSourceDisk1 != null) btnListSourceDisk1.Content = L("磁盘1", "Disk 1");
             if (btnListSourceDisk2 != null) btnListSourceDisk2.Content = L("磁盘2", "Disk 2");
+            if (btnDisc1CoverPath != null) btnDisc1CoverPath.Content = L("磁盘1封面", "Disc 1 Cover");
+            if (btnDisc2CoverPath != null) btnDisc2CoverPath.Content = L("磁盘2封面", "Disc 2 Cover");
             if (btnGameQuery != null) btnGameQuery.Content = L("Wii游戏数据库查询", "Wii game database");
             if (btnAddSource != null) btnAddSource.Content = L("添加", "Add");
             if (btnSelectMissingOnDisk != null) btnSelectMissingOnDisk.Content = L("选择", "Select");
             if (btnRemoveSelected != null) btnRemoveSelected.Content = L("删除选中游戏", "Remove selected");
             if (btnCopyToDisk != null) btnCopyToDisk.Content = L("拷贝", "Copy");
             if (btnWiiList != null) btnWiiList.Content = L("列表", "List");
-            if (btnWiiDownloadCovers != null) btnWiiDownloadCovers.Content = L("下载封面", "Download covers");
             if (btnRenameGames != null) btnRenameGames.Content = L("游戏重命名", "Rename games");
             if (btnWiiPluginEditor != null) btnWiiPluginEditor.Content = L("WII插件编辑器", "WII Plugin Editor");
             if (gbDiscCoverWii != null) gbDiscCoverWii.Header = L("Disc 封面", "Disc cover");

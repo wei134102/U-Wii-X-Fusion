@@ -38,6 +38,10 @@ namespace U_Wii_X_Fusion.Core.Settings
         public string WiiUCoverPath { get; set; } = string.Empty;
         /// <summary>Xbox 360 封面存储路径（不填则使用 CoverPath）</summary>
         public string XboxCoverPath { get; set; } = string.Empty;
+        /// <summary>磁盘1 封面存储路径（Wii/NGC 磁盘1 游戏封面）</summary>
+        public string Disc1CoverPath { get; set; } = string.Empty;
+        /// <summary>磁盘2 封面存储路径（Wii/NGC 磁盘2 游戏封面）</summary>
+        public string Disc2CoverPath { get; set; } = string.Empty;
         /// <summary>上次扫描的游戏目录（Wii/NGC）</summary>
         public string LastScanPath { get; set; } = string.Empty;
         /// <summary>Xbox 360 游戏目录（如 E:\roms\xbox360\X360K）</summary>

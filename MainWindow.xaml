@@ -115,6 +115,16 @@
                                         <TextBox x:Name="txtXboxCoverPath" Width="320" Margin="0,0,8,0" Style="{StaticResource RetroTextBox}"/>
                                         <Button x:Name="btnBrowseXboxCoverPath" Content="浏览..." Width="60" Style="{StaticResource RetroButtonBase}" FontSize="11"/>
                                     </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,3">
+                                        <TextBlock x:Name="lblDisc1CoverPath" Text="磁盘1封面路径:" Width="100" VerticalAlignment="Center" Foreground="{StaticResource TextSecondary}" FontSize="11"/>
+                                        <TextBox x:Name="txtDisc1CoverPath" Width="320" Margin="0,0,8,0" Style="{StaticResource RetroTextBox}"/>
+                                        <Button x:Name="btnBrowseDisc1CoverPath" Content="浏览..." Width="60" Style="{StaticResource RetroButtonBase}" FontSize="11"/>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,3">
+                                        <TextBlock x:Name="lblDisc2CoverPath" Text="磁盘2封面路径:" Width="100" VerticalAlignment="Center" Foreground="{StaticResource TextSecondary}" FontSize="11"/>
+                                        <TextBox x:Name="txtDisc2CoverPath" Width="320" Margin="0,0,8,0" Style="{StaticResource RetroTextBox}"/>
+                                        <Button x:Name="btnBrowseDisc2CoverPath" Content="浏览..." Width="60" Style="{StaticResource RetroButtonBase}" FontSize="11"/>
+                                    </StackPanel>
                                 </StackPanel>
                             </Expander>
 
@@ -261,7 +271,16 @@
                                         </ContextMenu>
                                     </Button.ContextMenu>
                                 </Button>
-                                <Button x:Name="btnWiiDownloadCovers" Content="封面" Width="60" Padding="4,2" Margin="0,0,4,0" Click="BtnWiiDownloadCovers_Click" Style="{StaticResource RetroButtonBase}" FontSize="10"/>
+                                <Button x:Name="btnWiiDownloadCovers" Content="封面" Width="60" Padding="4,2" Margin="0,0,4,0" Click="BtnWiiDownloadCovers_Click" Style="{StaticResource RetroButtonBase}" FontSize="10">
+                                    <Button.ContextMenu>
+                                        <ContextMenu>
+                                            <MenuItem Header="下载选中游戏封面" Click="BtnWiiDownloadCovers_Click"/>
+                                            <Separator/>
+                                            <MenuItem Header="本地封面拷贝-磁盘1" Click="BtnWiiCopyLocalCovers_Disk1_Click"/>
+                                            <MenuItem Header="本地封面拷贝-磁盘2" Click="BtnWiiCopyLocalCovers_Disk2_Click"/>
+                                        </ContextMenu>
+                                    </Button.ContextMenu>
+                                </Button>
                                 <Button x:Name="btnRenameGames" Content="重命名" Padding="4,2" Margin="0,0,4,0" Click="BtnRenameGames_Click" Style="{StaticResource RetroButtonBase}" FontSize="10"/>
                                 <Button x:Name="btnGameQuery" Content="数据库查询" Padding="4,2" Margin="0,0,4,0" Click="BtnGameQuery_Click" Style="{StaticResource RetroButtonBase}" FontSize="10"/>
                                 <Button x:Name="btnWiiPluginEditor" Content="插件编辑器" Width="90" Padding="4,2" Margin="0,0,4,0" Click="BtnWiiPluginEditor_Click" Style="{StaticResource RetroButtonBase}" FontSize="10"/>
@@ -269,6 +288,8 @@
                                 <Button x:Name="btnListSourceDirectory" Content="目录" Width="56" Padding="4,2" Margin="0,0,4,0" Click="BtnListSourceDirectory_Click" Style="{StaticResource RetroButtonBase}" FontSize="10"/>
                                 <Button x:Name="btnListSourceDisk1" Content="磁盘1" Width="56" Padding="4,2" Margin="0,0,4,0" Click="BtnListSourceDisk1_Click" Style="{StaticResource RetroButtonBase}" FontSize="10"/>
                                 <Button x:Name="btnListSourceDisk2" Content="磁盘2" Width="56" Padding="4,2" Margin="0,0,4,0" Click="BtnListSourceDisk2_Click" Style="{StaticResource RetroButtonBase}" FontSize="10"/>
+                                <Button x:Name="btnDisc1CoverPath" Content="磁盘1封面" Width="72" Padding="4,2" Margin="0,0,4,0" Click="BtnDisc1CoverPath_Click" Style="{StaticResource RetroButtonBase}" FontSize="10"/>
+                                <Button x:Name="btnDisc2CoverPath" Content="磁盘2封面" Width="72" Padding="4,2" Margin="0,0,4,0" Click="BtnDisc2CoverPath_Click" Style="{StaticResource RetroButtonBase}" FontSize="10"/>
                                 <Button x:Name="btnWiiList" Content="列表" Width="56" Padding="4,2" Margin="0,0,4,0" Click="BtnWiiList_Click" Style="{StaticResource RetroButtonBase}" FontSize="10">
                                     <Button.ContextMenu>
                                         <ContextMenu>
