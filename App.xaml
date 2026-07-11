@@ -118,15 +118,15 @@
                                 <Popup x:Name="Popup" AllowsTransparency="True" Focusable="False"
                                        IsOpen="{TemplateBinding IsDropDownOpen}"
                                        Placement="Bottom" PopupAnimation="Slide">
-                                    <Border x:Name="PopupBorder" MinWidth="{TemplateBinding ActualWidth}"
+                                    <Border x:Name="PopupBorder" MinWidth="100" MaxWidth="300"
+                                            HorizontalAlignment="Left"
                                             Background="{StaticResource CardBg}"
                                             BorderBrush="{StaticResource BorderColor}" BorderThickness="1">
-                                        <ScrollViewer Width="{Binding ActualWidth, ElementName=PopupBorder}"
-                                                      VerticalScrollBarVisibility="Auto" 
+                                        <ScrollViewer VerticalScrollBarVisibility="Auto"
                                                       HorizontalScrollBarVisibility="Disabled"
                                                       CanContentScroll="False"
                                                       MaxHeight="300">
-                                            <ItemsPresenter/>
+                                            <ItemsPresenter HorizontalAlignment="Stretch"/>
                                         </ScrollViewer>
                                     </Border>
                                 </Popup>
@@ -142,6 +142,8 @@
                 <Setter Property="Background" Value="{StaticResource CardBg}"/>
                 <Setter Property="FontSize" Value="11"/>
                 <Setter Property="Padding" Value="8,4"/>
+                <Setter Property="HorizontalAlignment" Value="Stretch"/>
+                <Setter Property="HorizontalContentAlignment" Value="Left"/>
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="ComboBoxItem">

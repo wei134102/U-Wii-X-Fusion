@@ -175,31 +175,43 @@
                                 <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
 
-                            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8">
-                                <TextBlock x:Name="txtWiiSectionTitle" Text="Wii / NGC 游戏管理" FontSize="14" FontWeight="Bold" Foreground="{StaticResource TextPrimary}" VerticalAlignment="Center"/>
-                                <Grid Width="200" Margin="12,0,0,0">
-                                    <ComboBox x:Name="cboDiskDrive" Background="{StaticResource CardBg}" BorderBrush="{StaticResource BorderColor}" BorderThickness="1" Foreground="{StaticResource TextPrimary}" FontSize="11" Padding="4,2" DisplayMemberPath="DisplayName" SelectionChanged="CboDiskDrive_SelectionChanged">
-                                        <ComboBox.ItemContainerStyle>
-                                            <Style TargetType="ComboBoxItem">
-                                                <Setter Property="Background" Value="{StaticResource CardBg}"/>
-                                                <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
-                                                <Setter Property="Padding" Value="8,4"/>
-                                                <Style.Triggers>
-                                                    <Trigger Property="IsMouseOver" Value="True">
-                                                        <Setter Property="Background" Value="{StaticResource HoverBg}"/>
-                                                    </Trigger>
-                                                    <Trigger Property="IsSelected" Value="True">
-                                                        <Setter Property="Background" Value="{StaticResource SelectedBg}"/>
-                                                        <Setter Property="Foreground" Value="{StaticResource SelectedForeground}"/>
-                                                    </Trigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </ComboBox.ItemContainerStyle>
-                                    </ComboBox>
-                                    <TextBlock x:Name="txtDiskDrivePlaceholder" Text="选择磁盘..." Foreground="{StaticResource TextSecondary}" FontSize="11" VerticalAlignment="Center" Margin="8,0,0,0" IsHitTestVisible="False" Visibility="Collapsed"/>
-                                </Grid>
-                                <TextBlock x:Name="txtGameCount" Text="游戏数: 0" FontSize="11" Foreground="{StaticResource TextSecondary}" Margin="12,0,0,0" VerticalAlignment="Center"/>
-                            </StackPanel>
+                            <Grid Grid.Row="0" Margin="0,0,0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0" Orientation="Horizontal">
+                                    <TextBlock x:Name="txtWiiSectionTitle" Text="Wii / NGC 游戏管理" FontSize="14" FontWeight="Bold" Foreground="{StaticResource TextPrimary}" VerticalAlignment="Center"/>
+                                    <Grid Width="200" Margin="12,0,0,0">
+                                        <ComboBox x:Name="cboDiskDrive" Background="{StaticResource CardBg}" BorderBrush="{StaticResource BorderColor}" BorderThickness="1" Foreground="{StaticResource TextPrimary}" FontSize="11" Padding="4,2" DisplayMemberPath="DisplayName" SelectionChanged="CboDiskDrive_SelectionChanged">
+                                            <ComboBox.ItemContainerStyle>
+                                                <Style TargetType="ComboBoxItem">
+                                                    <Setter Property="Background" Value="{StaticResource CardBg}"/>
+                                                    <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+                                                    <Setter Property="Padding" Value="8,4"/>
+                                                    <Style.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter Property="Background" Value="{StaticResource HoverBg}"/>
+                                                        </Trigger>
+                                                        <Trigger Property="IsSelected" Value="True">
+                                                            <Setter Property="Background" Value="{StaticResource SelectedBg}"/>
+                                                            <Setter Property="Foreground" Value="{StaticResource SelectedForeground}"/>
+                                                        </Trigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </ComboBox.ItemContainerStyle>
+                                        </ComboBox>
+                                        <TextBlock x:Name="txtDiskDrivePlaceholder" Text="选择磁盘..." Foreground="{StaticResource TextSecondary}" FontSize="11" VerticalAlignment="Center" Margin="8,0,0,0" IsHitTestVisible="False" Visibility="Collapsed"/>
+                                    </Grid>
+                                    <TextBlock x:Name="txtGameCount" Text="游戏数: 0" FontSize="11" Foreground="{StaticResource TextSecondary}" Margin="12,0,0,0" VerticalAlignment="Center"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Button x:Name="btnGameQuery" Content="数据库查询" Padding="4,2" Margin="0,0,4,0" Click="BtnGameQuery_Click" Style="{StaticResource RetroButtonBase}" FontSize="10"/>
+                                    <Button x:Name="btnWiiPluginEditor" Content="插件编辑器" Width="90" Padding="4,2" Margin="0,0,4,0" Click="BtnWiiPluginEditor_Click" Style="{StaticResource RetroButtonBase}" FontSize="10"/>
+                                </StackPanel>
+                            </Grid>
 
                             <!-- 筛选栏 - 可折叠 -->
                             <Border Grid.Row="1" Background="{StaticResource CardBg}" BorderBrush="{StaticResource BorderColor}" BorderThickness="1" CornerRadius="4" Margin="0,0,0,6">
@@ -282,8 +294,6 @@
                                     </Button.ContextMenu>
                                 </Button>
                                 <Button x:Name="btnRenameGames" Content="重命名" Padding="4,2" Margin="0,0,4,0" Click="BtnRenameGames_Click" Style="{StaticResource RetroButtonBase}" FontSize="10"/>
-                                <Button x:Name="btnGameQuery" Content="数据库查询" Padding="4,2" Margin="0,0,4,0" Click="BtnGameQuery_Click" Style="{StaticResource RetroButtonBase}" FontSize="10"/>
-                                <Button x:Name="btnWiiPluginEditor" Content="插件编辑器" Width="90" Padding="4,2" Margin="0,0,4,0" Click="BtnWiiPluginEditor_Click" Style="{StaticResource RetroButtonBase}" FontSize="10"/>
                                 <Separator Width="1" Margin="4,4"/>
                                 <Button x:Name="btnListSourceDirectory" Content="目录" Width="56" Padding="4,2" Margin="0,0,4,0" Click="BtnListSourceDirectory_Click" Style="{StaticResource RetroButtonBase}" FontSize="10"/>
                                 <Button x:Name="btnListSourceDisk1" Content="磁盘1" Width="56" Padding="4,2" Margin="0,0,4,0" Click="BtnListSourceDisk1_Click" Style="{StaticResource RetroButtonBase}" FontSize="10"/>
