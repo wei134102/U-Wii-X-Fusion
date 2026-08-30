@@ -537,74 +537,10 @@ namespace U_Wii_X_Fusion
         private void ImgCover_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
             if (_currentCoverBitmap == null) return;
-            var viewer = new CoverImageViewerWindow(_currentCoverBitmap) { Owner = this };
+            var viewer = new ImagePreviewWindow(_currentCoverBitmap) { Owner = this };
             viewer.Show();
         }
 
         #endregion
-    }
-
-    /// <summary>封面大图查看：居中、原图大小、滚轮缩放时窗口跟随放大缩小、右键关闭</summary>
-    public class CoverImageViewerWindow : Window
-    {
-        private readonly Image _image;
-        private readonly ScaleTransform _scaleTransform;
-        private double _scale = 1.0;
-        private readonly double _baseWidth;
-        private readonly double _baseHeight;
-        private const double PaddingW = 20;
-        private const double PaddingH = 40;
-        private static readonly double MaxW = SystemParameters.PrimaryScreenWidth * 0.95;
-        private static readonly double MaxH = SystemParameters.PrimaryScreenHeight * 0.95;
-
-        public CoverImageViewerWindow(BitmapImage bitmap)
-        {
-            Title = "封面预览";
-            WindowStartupLocation = WindowStartupLocation.CenterScreen;
-            WindowStyle = WindowStyle.ToolWindow;
-            ResizeMode = ResizeMode.CanResize;
-            Background = Brushes.Black;
-
-            _baseWidth = bitmap.PixelWidth;
-            _baseHeight = bitmap.PixelHeight;
-            _scale = 1.0;
-            _scaleTransform = new ScaleTransform(1, 1);
-            _image = new Image
-            {
-                Source = bitmap,
-                Stretch = Stretch.None,
-                RenderTransform = _scaleTransform,
-                RenderTransformOrigin = new System.Windows.Point(0.5, 0.5)
-            };
-
-            // 始终以原始尺寸显示，窗口按原图大小（超出屏幕时出现滚动条）
-            ApplyWindowSize();
-
-            Content = new ScrollViewer
-            {
-                HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
-                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-                Content = _image
-            };
-
-            _image.MouseWheel += (s, e) =>
-            {
-                e.Handled = true;
-                double delta = e.Delta > 0 ? 1.15 : 1 / 1.15;
-                _scale = Math.Max(0.25, Math.Min(8, _scale * delta));
-                _scaleTransform.ScaleX = _scaleTransform.ScaleY = _scale;
-                ApplyWindowSize();
-            };
-            _image.MouseRightButtonDown += (s, e) => Close();
-            _image.Cursor = System.Windows.Input.Cursors.SizeAll;
-        }
-
-        private void ApplyWindowSize()
-        {
-            double w = Math.Min(_baseWidth * _scale + PaddingW, MaxW);
-            double h = Math.Min(_baseHeight * _scale + PaddingH, MaxH);
-            Width = Math.Max(120, w);
-            Height = Math.Max(100, h);
-        }
     }
 }

@@ -4417,5 +4417,23 @@ namespace U_Wii_X_Fusion
         }
 
         #endregion
+
+        #region 图片预览
+
+        private void CoverImage_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (sender is Image image && image.Source is BitmapImage bitmapImage)
+            {
+                var previewWindow = new ImagePreviewWindow
+                {
+                    Owner = this
+                };
+                previewWindow.SetImageSource(bitmapImage);
+                previewWindow.Show();
+                e.Handled = true;
+            }
+        }
+
+        #endregion
     }
 }

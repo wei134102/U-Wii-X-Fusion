@@ -155,7 +155,7 @@
                                 </ComboBox>
                             </StackPanel>
                             <Border BorderBrush="{StaticResource BorderColor}" BorderThickness="1" CornerRadius="3" Height="180" Background="{StaticResource SecondaryBg}" Cursor="Hand">
-                                <Image x:Name="imgCover" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <Image x:Name="imgCover" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" MouseLeftButtonDown="ImgCover_MouseLeftButtonDown" Cursor="Hand"/>
                             </Border>
                             <TextBlock x:Name="txtCoverStatus" Text="请选择游戏查看封面" HorizontalAlignment="Center" Margin="0,4,0,0" FontSize="10" Foreground="{StaticResource TextMuted}"/>
                         </StackPanel>

@@ -233,7 +233,7 @@ namespace U_Wii_X_Fusion
         private void ImgCover_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
             if (_currentCoverBitmap == null) return;
-            var viewer = new CoverImageViewerWindow(_currentCoverBitmap) { Owner = this };
+            var viewer = new ImagePreviewWindow(_currentCoverBitmap) { Owner = this };
             viewer.Show();
         }
     }

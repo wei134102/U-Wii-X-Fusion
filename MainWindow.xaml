@@ -389,13 +389,13 @@
 
                                 <GroupBox x:Name="gbDiscCoverWii" Header="Disc 封面" Style="{StaticResource RetroGroupBox}" FontSize="10" Margin="0,0,0,4">
                                     <Border Background="{StaticResource SecondaryBg}" Padding="4" CornerRadius="3">
-                                        <Image x:Name="imgDiscCover" Stretch="Uniform" />
+                                        <Image x:Name="imgDiscCover" Stretch="Uniform" MouseLeftButtonDown="CoverImage_MouseLeftButtonDown" Cursor="Hand"/>
                                     </Border>
                                 </GroupBox>
 
                                 <GroupBox x:Name="gb3DCoverWii" Header="3D 封面" Grid.Row="1" Style="{StaticResource RetroGroupBox}" FontSize="10" Margin="0,4,0,0">
                                     <Border Background="{StaticResource SecondaryBg}" Padding="4" CornerRadius="3">
-                                        <Image x:Name="img3DCover" Stretch="Uniform" />
+                                        <Image x:Name="img3DCover" Stretch="Uniform" MouseLeftButtonDown="CoverImage_MouseLeftButtonDown" Cursor="Hand"/>
                                     </Border>
                                 </GroupBox>
                             </Grid>
@@ -556,12 +556,12 @@
                                 </Grid.RowDefinitions>
                                 <GroupBox x:Name="gbDiscCoverWiiU" Header="Disc 封面" Style="{StaticResource RetroGroupBox}" FontSize="10" Margin="0,0,0,4">
                                     <Border Background="{StaticResource SecondaryBg}" Padding="4" CornerRadius="3">
-                                        <Image x:Name="imgDiscCoverWiiU" Stretch="Uniform"/>
+                                        <Image x:Name="imgDiscCoverWiiU" Stretch="Uniform" MouseLeftButtonDown="CoverImage_MouseLeftButtonDown" Cursor="Hand"/>
                                     </Border>
                                 </GroupBox>
                                 <GroupBox x:Name="gb3DCoverWiiU" Header="3D 封面" Grid.Row="1" Style="{StaticResource RetroGroupBox}" FontSize="10" Margin="0,4,0,0">
                                     <Border Background="{StaticResource SecondaryBg}" Padding="4" CornerRadius="3">
-                                        <Image x:Name="img3DCoverWiiU" Stretch="Uniform"/>
+                                        <Image x:Name="img3DCoverWiiU" Stretch="Uniform" MouseLeftButtonDown="CoverImage_MouseLeftButtonDown" Cursor="Hand"/>
                                     </Border>
                                 </GroupBox>
                             </Grid>
