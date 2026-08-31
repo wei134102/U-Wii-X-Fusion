@@ -391,11 +391,13 @@ namespace U_Wii_X_Fusion
             string genre = GetComboDisplayValue(cmbWiiGenreFilter);
             string controller = GetComboDisplayValue(cmbWiiControllerFilter);
             string playersText = GetComboDisplayValue(cmbWiiPlayersFilter);
+            string searchText = txtWiiSearch?.Text?.Trim() ?? string.Empty;
 
             bool genreAll = string.IsNullOrWhiteSpace(genre) || genre == "全部类别";
             bool controllerAll = string.IsNullOrWhiteSpace(controller) || controller == "全部控制器";
             bool playersAll = string.IsNullOrWhiteSpace(playersText) || playersText == "全部人数";
-            if (genreAll && controllerAll && playersAll) return true;
+            bool searchAll = string.IsNullOrWhiteSpace(searchText);
+            if (genreAll && controllerAll && playersAll && searchAll) return true;
 
             int? players = null;
             if (!playersAll && playersText.EndsWith("人"))
@@ -408,7 +410,13 @@ namespace U_Wii_X_Fusion
             bool genreMatch = genreAll || (game?.Genres != null && game.Genres.Any(g => string.Equals(g, genre, StringComparison.OrdinalIgnoreCase)));
             bool controllerMatch = controllerAll || (game?.Controllers != null && game.Controllers.Any(c => string.Equals(c, controller, StringComparison.OrdinalIgnoreCase)));
             bool playersMatch = playersAll || (game != null && game.Players == players);
-            return genreMatch && controllerMatch && playersMatch;
+            
+            bool searchMatch = searchAll || 
+                (!string.IsNullOrWhiteSpace(game?.GameId) && game.GameId.IndexOf(searchText, StringComparison.OrdinalIgnoreCase) >= 0) ||
+                (!string.IsNullOrWhiteSpace(game?.Title) && game.Title.IndexOf(searchText, StringComparison.OrdinalIgnoreCase) >= 0) ||
+                (!string.IsNullOrWhiteSpace(game?.ChineseTitle) && game.ChineseTitle.IndexOf(searchText, StringComparison.OrdinalIgnoreCase) >= 0);
+            
+            return genreMatch && controllerMatch && playersMatch && searchMatch;
         }
 
         private void ApplyWiiFilters()
@@ -431,6 +439,23 @@ namespace U_Wii_X_Fusion
             SelectComboByValue(cmbWiiGenreFilter, "全部类别", "全部类别");
             SelectComboByValue(cmbWiiControllerFilter, "全部控制器", "全部控制器");
             SelectComboByValue(cmbWiiPlayersFilter, "全部人数", "全部人数");
+            if (txtWiiSearch != null) txtWiiSearch.Text = string.Empty;
+            ApplyWiiFilters();
+        }
+
+        private void BtnWiiSearch_Click(object sender, RoutedEventArgs e)
+        {
+            ApplyWiiFilters();
+        }
+
+        private void BtnWiiClearSearch_Click(object sender, RoutedEventArgs e)
+        {
+            if (txtWiiSearch != null) txtWiiSearch.Text = string.Empty;
+            ApplyWiiFilters();
+        }
+
+        private void TxtWiiSearch_TextChanged(object sender, TextChangedEventArgs e)
+        {
             ApplyWiiFilters();
         }
 
@@ -2059,11 +2084,13 @@ namespace U_Wii_X_Fusion
             string genre = GetComboDisplayValue(cmbWiiUGenreFilter);
             string controller = GetComboDisplayValue(cmbWiiUControllerFilter);
             string playersText = GetComboDisplayValue(cmbWiiUPlayersFilter);
+            string searchText = txtWiiUSearch?.Text?.Trim() ?? string.Empty;
 
             bool genreAll = string.IsNullOrWhiteSpace(genre) || genre == "全部类别";
             bool controllerAll = string.IsNullOrWhiteSpace(controller) || controller == "全部控制器";
             bool playersAll = string.IsNullOrWhiteSpace(playersText) || playersText == "全部人数";
-            if (genreAll && controllerAll && playersAll) return true;
+            bool searchAll = string.IsNullOrWhiteSpace(searchText);
+            if (genreAll && controllerAll && playersAll && searchAll) return true;
 
             int? players = null;
             if (!playersAll && playersText.EndsWith("人"))
@@ -2076,7 +2103,13 @@ namespace U_Wii_X_Fusion
             bool genreMatch = genreAll || (game?.Genres != null && game.Genres.Any(g => string.Equals(g, genre, StringComparison.OrdinalIgnoreCase)));
             bool controllerMatch = controllerAll || (game?.Controllers != null && game.Controllers.Any(c => string.Equals(c, controller, StringComparison.OrdinalIgnoreCase)));
             bool playersMatch = playersAll || (game != null && game.Players == players);
-            return genreMatch && controllerMatch && playersMatch;
+            
+            bool searchMatch = searchAll || 
+                (!string.IsNullOrWhiteSpace(game?.GameId) && game.GameId.IndexOf(searchText, StringComparison.OrdinalIgnoreCase) >= 0) ||
+                (!string.IsNullOrWhiteSpace(game?.Title) && game.Title.IndexOf(searchText, StringComparison.OrdinalIgnoreCase) >= 0) ||
+                (!string.IsNullOrWhiteSpace(game?.ChineseTitle) && game.ChineseTitle.IndexOf(searchText, StringComparison.OrdinalIgnoreCase) >= 0);
+            
+            return genreMatch && controllerMatch && playersMatch && searchMatch;
         }
 
         private void ApplyWiiUFilters()
@@ -2099,6 +2132,23 @@ namespace U_Wii_X_Fusion
             SelectComboByValue(cmbWiiUGenreFilter, "全部类别", "全部类别");
             SelectComboByValue(cmbWiiUControllerFilter, "全部控制器", "全部控制器");
             SelectComboByValue(cmbWiiUPlayersFilter, "全部人数", "全部人数");
+            if (txtWiiUSearch != null) txtWiiUSearch.Text = string.Empty;
+            ApplyWiiUFilters();
+        }
+
+        private void BtnWiiUSearch_Click(object sender, RoutedEventArgs e)
+        {
+            ApplyWiiUFilters();
+        }
+
+        private void BtnWiiUClearSearch_Click(object sender, RoutedEventArgs e)
+        {
+            if (txtWiiUSearch != null) txtWiiUSearch.Text = string.Empty;
+            ApplyWiiUFilters();
+        }
+
+        private void TxtWiiUSearch_TextChanged(object sender, TextChangedEventArgs e)
+        {
             ApplyWiiUFilters();
         }
 
@@ -2171,9 +2221,19 @@ namespace U_Wii_X_Fusion
         private bool MatchesXboxFilters(GameInfo game)
         {
             string category = GetComboDisplayValue(cmbXboxCategoryFilter);
+            string searchText = txtXboxSearch?.Text?.Trim() ?? string.Empty;
+            
             bool all = string.IsNullOrWhiteSpace(category) || category == "全部类型";
-            if (all) return true;
-            return game?.Genres != null && game.Genres.Any(g => string.Equals(g, category, StringComparison.OrdinalIgnoreCase));
+            bool searchAll = string.IsNullOrWhiteSpace(searchText);
+            if (all && searchAll) return true;
+            
+            bool categoryMatch = all || (game?.Genres != null && game.Genres.Any(g => string.Equals(g, category, StringComparison.OrdinalIgnoreCase)));
+            bool searchMatch = searchAll || 
+                (!string.IsNullOrWhiteSpace(game?.GameId) && game.GameId.IndexOf(searchText, StringComparison.OrdinalIgnoreCase) >= 0) ||
+                (!string.IsNullOrWhiteSpace(game?.Title) && game.Title.IndexOf(searchText, StringComparison.OrdinalIgnoreCase) >= 0) ||
+                (!string.IsNullOrWhiteSpace(game?.ChineseTitle) && game.ChineseTitle.IndexOf(searchText, StringComparison.OrdinalIgnoreCase) >= 0);
+            
+            return categoryMatch && searchMatch;
         }
 
         private void ApplyXboxFilters()
@@ -2194,6 +2254,23 @@ namespace U_Wii_X_Fusion
         private void BtnXboxFilterReset_Click(object sender, RoutedEventArgs e)
         {
             SelectComboByValue(cmbXboxCategoryFilter, "全部类型", "全部类型");
+            if (txtXboxSearch != null) txtXboxSearch.Text = string.Empty;
+            ApplyXboxFilters();
+        }
+
+        private void BtnXboxSearch_Click(object sender, RoutedEventArgs e)
+        {
+            ApplyXboxFilters();
+        }
+
+        private void BtnXboxClearSearch_Click(object sender, RoutedEventArgs e)
+        {
+            if (txtXboxSearch != null) txtXboxSearch.Text = string.Empty;
+            ApplyXboxFilters();
+        }
+
+        private void TxtXboxSearch_TextChanged(object sender, TextChangedEventArgs e)
+        {
             ApplyXboxFilters();
         }
 

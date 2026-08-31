@@ -227,6 +227,12 @@
                                         </Button>
                                     </Grid>
                                     <StackPanel x:Name="pnlWiiFilterContent" Margin="10" Visibility="Collapsed">
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                            <TextBlock Text="搜索:" Foreground="{StaticResource TextSecondary}" FontSize="11" Margin="0,0,4,0" VerticalAlignment="Center"/>
+                                            <TextBox x:Name="txtWiiSearch" Width="260" Style="{StaticResource RetroTextBox}" ToolTip="输入游戏ID或名称" TextChanged="TxtWiiSearch_TextChanged"/>
+                                            <Button x:Name="btnWiiSearch" Content="搜索" Width="64" Margin="8,0,0,0" Style="{StaticResource RetroButtonBase}" FontSize="11" Click="BtnWiiSearch_Click"/>
+                                            <Button x:Name="btnWiiClearSearch" Content="清除" Width="64" Margin="6,0,0,0" Style="{StaticResource RetroButtonBase}" FontSize="11" Click="BtnWiiClearSearch_Click"/>
+                                        </StackPanel>
                                         <StackPanel Orientation="Horizontal">
                                             <TextBlock Text="类别:" Foreground="{StaticResource TextSecondary}" FontSize="11" Margin="0,0,4,0" VerticalAlignment="Center"/>
                                             <ComboBox x:Name="cmbWiiGenreFilter" Width="120" Height="26" Margin="0,0,8,0" SelectionChanged="CmbWiiFilter_SelectionChanged" Style="{StaticResource RetroComboBox}" ItemContainerStyle="{StaticResource RetroComboBoxItem}">
@@ -439,6 +445,12 @@
                                         </Button>
                                     </Grid>
                                     <StackPanel x:Name="pnlWiiUFilterContent" Margin="10" Visibility="Collapsed">
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                            <TextBlock Text="搜索:" Foreground="{StaticResource TextSecondary}" FontSize="11" Margin="0,0,4,0" VerticalAlignment="Center"/>
+                                            <TextBox x:Name="txtWiiUSearch" Width="260" Style="{StaticResource RetroTextBox}" ToolTip="输入游戏ID或名称" TextChanged="TxtWiiUSearch_TextChanged"/>
+                                            <Button x:Name="btnWiiUSearch" Content="搜索" Width="64" Margin="8,0,0,0" Style="{StaticResource RetroButtonBase}" FontSize="11" Click="BtnWiiUSearch_Click"/>
+                                            <Button x:Name="btnWiiUClearSearch" Content="清除" Width="64" Margin="6,0,0,0" Style="{StaticResource RetroButtonBase}" FontSize="11" Click="BtnWiiUClearSearch_Click"/>
+                                        </StackPanel>
                                         <StackPanel Orientation="Horizontal">
                                             <TextBlock Text="类别:" Foreground="{StaticResource TextSecondary}" FontSize="11" Margin="0,0,4,0" VerticalAlignment="Center"/>
                                             <ComboBox x:Name="cmbWiiUGenreFilter" Width="120" Height="26" Margin="0,0,8,0" SelectionChanged="CmbWiiUFilter_SelectionChanged" Style="{StaticResource RetroComboBox}" ItemContainerStyle="{StaticResource RetroComboBoxItem}">
@@ -605,6 +617,12 @@
                                         </Button>
                                     </Grid>
                                     <StackPanel x:Name="pnlXboxFilterContent" Margin="10" Visibility="Collapsed">
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                            <TextBlock Text="搜索:" Foreground="{StaticResource TextSecondary}" FontSize="11" Margin="0,0,4,0" VerticalAlignment="Center"/>
+                                            <TextBox x:Name="txtXboxSearch" Width="260" Style="{StaticResource RetroTextBox}" ToolTip="输入游戏ID或名称" TextChanged="TxtXboxSearch_TextChanged"/>
+                                            <Button x:Name="btnXboxSearch" Content="搜索" Width="64" Margin="8,0,0,0" Style="{StaticResource RetroButtonBase}" FontSize="11" Click="BtnXboxSearch_Click"/>
+                                            <Button x:Name="btnXboxClearSearch" Content="清除" Width="64" Margin="6,0,0,0" Style="{StaticResource RetroButtonBase}" FontSize="11" Click="BtnXboxClearSearch_Click"/>
+                                        </StackPanel>
                                         <StackPanel Orientation="Horizontal">
                                             <TextBlock Text="类型:" Foreground="{StaticResource TextSecondary}" FontSize="11" Margin="0,0,4,0" VerticalAlignment="Center"/>
                                             <ComboBox x:Name="cmbXboxCategoryFilter" Width="150" Height="26" Margin="0,0,8,0" SelectionChanged="CmbXboxFilter_SelectionChanged" Style="{StaticResource RetroComboBox}" ItemContainerStyle="{StaticResource RetroComboBoxItem}">
